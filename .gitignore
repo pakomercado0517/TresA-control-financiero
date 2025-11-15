@@ -17,6 +17,10 @@
 /.next/
 /out/
 
+# distribución
+/distribucion/
+distribucion/
+
 # production
 /build
 

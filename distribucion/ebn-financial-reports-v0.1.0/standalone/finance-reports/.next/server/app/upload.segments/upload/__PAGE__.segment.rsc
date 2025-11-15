@@ -1,9 +1,0 @@
-1:"$Sreact.fragment"
-2:I[52470,["/_next/static/chunks/59936cba87efc172.js","/_next/static/chunks/97bbf9f48538d501.js","/_next/static/chunks/0919be3a676077ea.js","/_next/static/chunks/e063c56b6b0f1aa9.js","/_next/static/chunks/d230374d8daeeb6d.js"],"ProfileGuard"]
-3:I[52470,["/_next/static/chunks/59936cba87efc172.js","/_next/static/chunks/97bbf9f48538d501.js","/_next/static/chunks/0919be3a676077ea.js","/_next/static/chunks/e063c56b6b0f1aa9.js","/_next/static/chunks/d230374d8daeeb6d.js"],"ProfileStatus"]
-4:I[12987,["/_next/static/chunks/59936cba87efc172.js","/_next/static/chunks/97bbf9f48538d501.js","/_next/static/chunks/0919be3a676077ea.js","/_next/static/chunks/e063c56b6b0f1aa9.js","/_next/static/chunks/d230374d8daeeb6d.js"],"FileUploader"]
-5:I[18598,["/_next/static/chunks/59936cba87efc172.js","/_next/static/chunks/97bbf9f48538d501.js","/_next/static/chunks/0919be3a676077ea.js","/_next/static/chunks/e063c56b6b0f1aa9.js","/_next/static/chunks/d230374d8daeeb6d.js"],"InvoiceList"]
-6:I[84828,["/_next/static/chunks/9013f2eeec6f74ac.js","/_next/static/chunks/4b4052545c9d9a95.js"],"OutletBoundary"]
-7:"$Sreact.suspense"
-0:{"buildId":"rDk6qRXLnqn7djUWIeSl-","rsc":["$","$1","c",{"children":[["$","div",null,{"className":"container mx-auto p-6 max-w-7xl","children":[["$","div",null,{"className":"mb-6","children":[["$","h1",null,{"className":"text-3xl font-bold text-gray-900","children":"Ingresos"}],["$","p",null,{"className":"text-gray-600 mt-2","children":"Carga las facturas XML (CFDI) que has expedido en el mes"}]]}],["$","$L2",null,{"mode":"required"}],["$","$L3",null,{}],["$","$L4",null,{}],["$","$L5",null,{}]]}],[["$","script","script-0",{"src":"/_next/static/chunks/d230374d8daeeb6d.js","async":true}]],["$","$L6",null,{"children":["$","$7",null,{"name":"Next.MetadataOutlet","children":"$@8"}]}]]}],"loading":null,"isPartial":false}
-8:null
