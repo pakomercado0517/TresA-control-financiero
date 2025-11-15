@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { Navigation } from "./components/navigation";
 import { Toaster } from "sonner";
+import { ServiceWorkerRegister } from "./components/service-worker-register";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -15,9 +16,34 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Control de Ingresos - Facturas CFDI",
-  description: "Sistema de control de gastos mediante procesamiento de facturas XML (CFDI México)",
+  title: "EBN Financial Reports",
+  description:
+    "Sistema de control de gastos mediante procesamiento de facturas XML (CFDI México)",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: "EBN FR",
+  },
+  icons: {
+    icon: [
+      { url: "/favicon-16x16.png", sizes: "16x16", type: "image/png" },
+      { url: "/favicon-32x32.png", sizes: "32x32", type: "image/png" },
+      { url: "/favicon-96x96.png", sizes: "96x96", type: "image/png" },
+      { url: "/icon-192x192.png", sizes: "192x192", type: "image/png" },
+      { url: "/icon-512x512.png", sizes: "512x512", type: "image/png" },
+    ],
+    apple: [
+      { url: "/apple-touch-icon.png", sizes: "180x180", type: "image/png" },
+    ],
+    shortcut: [{ url: "/favicon.ico", type: "image/x-icon" }],
+  },
 };
+
+export function generateViewport() {
+  return {
+    themeColor: "#3b82f6",
+  };
+}
 
 export default function RootLayout({
   children,
@@ -29,10 +55,9 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
+        <ServiceWorkerRegister />
         <Navigation />
-        <main className="min-h-screen bg-gray-50">
-          {children}
-        </main>
+        <main className="min-h-screen bg-gray-50">{children}</main>
         <Toaster position="top-right" richColors />
       </body>
     </html>

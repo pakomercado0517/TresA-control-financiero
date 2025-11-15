@@ -1,4 +1,4 @@
-# 💰 Control de Ingresos y Gastos
+# 💰 EBN Financial Reports
 
 > Sistema de gestión financiera para el control de facturas CFDI (México) con generación de reportes en PDF
 

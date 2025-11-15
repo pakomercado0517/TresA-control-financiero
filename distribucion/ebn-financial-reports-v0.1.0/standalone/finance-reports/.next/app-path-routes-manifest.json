@@ -1,0 +1,13 @@
+{
+  "/_global-error/page": "/_global-error",
+  "/_not-found/page": "/_not-found",
+  "/dashboard/page": "/dashboard",
+  "/expenses/page": "/expenses",
+  "/favicon.ico/route": "/favicon.ico",
+  "/manifest.webmanifest/route": "/manifest.webmanifest",
+  "/page": "/",
+  "/settings/page": "/settings",
+  "/test-parser/page": "/test-parser",
+  "/test-store/page": "/test-store",
+  "/upload/page": "/upload"
+}

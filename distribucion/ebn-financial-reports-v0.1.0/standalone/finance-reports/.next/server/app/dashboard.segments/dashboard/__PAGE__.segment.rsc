@@ -1,0 +1,7 @@
+1:"$Sreact.fragment"
+2:I[52470,["/_next/static/chunks/59936cba87efc172.js","/_next/static/chunks/97bbf9f48538d501.js","/_next/static/chunks/0919be3a676077ea.js","/_next/static/chunks/e063c56b6b0f1aa9.js","/_next/static/chunks/61af3b3899c66e3b.js","/_next/static/chunks/7363b5e5c61bd485.js"],"ProfileStatus"]
+3:I[7671,["/_next/static/chunks/59936cba87efc172.js","/_next/static/chunks/97bbf9f48538d501.js","/_next/static/chunks/0919be3a676077ea.js","/_next/static/chunks/e063c56b6b0f1aa9.js","/_next/static/chunks/61af3b3899c66e3b.js","/_next/static/chunks/7363b5e5c61bd485.js"],"DashboardView"]
+4:I[84828,["/_next/static/chunks/9013f2eeec6f74ac.js","/_next/static/chunks/4b4052545c9d9a95.js"],"OutletBoundary"]
+5:"$Sreact.suspense"
+0:{"buildId":"rDk6qRXLnqn7djUWIeSl-","rsc":["$","$1","c",{"children":[["$","div",null,{"className":"container mx-auto p-6 max-w-7xl","children":[["$","div",null,{"className":"mb-6","children":[["$","h1",null,{"className":"text-3xl font-bold text-gray-900","children":"Dashboard"}],["$","p",null,{"className":"text-gray-600 mt-2","children":"Visualiza tus métricas financieras y gestiona tus facturas"}]]}],["$","$L2",null,{}],["$","$L3",null,{}]]}],[["$","script","script-0",{"src":"/_next/static/chunks/61af3b3899c66e3b.js","async":true}],["$","script","script-1",{"src":"/_next/static/chunks/7363b5e5c61bd485.js","async":true}]],["$","$L4",null,{"children":["$","$5",null,{"name":"Next.MetadataOutlet","children":"$@6"}]}]]}],"loading":null,"isPartial":false}
+6:null

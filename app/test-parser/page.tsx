@@ -139,7 +139,7 @@ export default function TestParserPage() {
       {/* Error */}
       {error && (
         <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6 flex items-center gap-2">
-          <FileX className="h-5 w-5 text-red-500 flex-shrink-0" />
+          <FileX className="h-5 w-5 text-red-500 shrink-0" />
           <div>
             <p className="font-semibold text-red-700">Error</p>
             <p className="text-red-600">{error}</p>

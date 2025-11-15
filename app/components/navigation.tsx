@@ -23,7 +23,7 @@ export function Navigation() {
         <div className="flex items-center justify-between h-16">
           <div className="flex items-center gap-8">
             <Link href="/" className="text-xl font-bold text-gray-900">
-              Control de Ingresos
+              EBN Financial Reports
             </Link>
             <div className="flex items-center gap-1">
               {navigation.map((item) => {
