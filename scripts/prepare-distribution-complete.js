@@ -188,3 +188,4 @@ console.log('\n🚀 Para probar:');
 console.log(`   cd ${distDir}`);
 console.log('   start.bat (Windows) o ./start.sh (Mac/Linux)');
 
+

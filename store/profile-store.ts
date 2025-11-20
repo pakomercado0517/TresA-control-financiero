@@ -5,14 +5,14 @@
  */
 
 import { create } from 'zustand';
-import { persist, createJSONStorage } from 'zustand/middleware';
 import type {
   ClienteProfile,
   ValidacionesConfig,
   TipoPersona,
 } from '@/lib/types';
-import { idbStorage } from '@/lib/storage/idb-storage';
 import { validarFormatoRFC, normalizarRFC, determinarTipoPersona } from '@/lib/utils/rfc-validator';
+import { saveProfileToSupabase, fetchProfileFromSupabase } from '@/lib/supabase/profiles';
+import { supabase } from '@/lib/supabase/client';
 
 interface ProfileStoreState {
   profile: ClienteProfile | null;
@@ -28,16 +28,16 @@ interface ProfileStoreActions {
   getRFC: () => string | null;
   getTipoPersona: () => TipoPersona | null;
   isRFCValid: () => boolean;
+  syncWithSupabase: () => Promise<void>;
 }
 
 export type ProfileStore = ProfileStoreState & ProfileStoreActions;
 
 /**
- * Store de perfil con persistencia
+ * Store de perfil - Datos solo desde Supabase
  */
 export const useProfileStore = create<ProfileStore>()(
-  persist(
-    (set, get) => ({
+  (set, get) => ({
       // Estado inicial
       profile: null,
       isLoading: false,
@@ -78,6 +78,18 @@ export const useProfileStore = create<ProfileStore>()(
           profile,
           error: null,
         });
+
+        // Sincronizar con Supabase si hay usuario autenticado
+        (async () => {
+          try {
+            const { data: { user } } = await supabase.auth.getUser();
+            if (user) {
+              await saveProfileToSupabase(profile, user.id);
+            }
+          } catch (supabaseError) {
+            console.warn('Error al sincronizar perfil con Supabase:', supabaseError);
+          }
+        })();
       },
 
       /**
@@ -183,22 +195,26 @@ export const useProfileStore = create<ProfileStore>()(
         const { profile } = get();
         return profile !== null && validarFormatoRFC(profile.rfc);
       },
-    }),
-    {
-      name: 'profile-storage',
-      storage: createJSONStorage(() => idbStorage),
-      // Convertir fechas de string a Date al leer del storage
-      onRehydrateStorage: () => (state) => {
-        if (state?.profile) {
-          state.profile.fechaCreacion = new Date(
-            state.profile.fechaCreacion as unknown as string
-          );
-          state.profile.fechaActualizacion = new Date(
-            state.profile.fechaActualizacion as unknown as string
-          );
+
+      /**
+       * Sincroniza perfil con Supabase (carga inicial y sincronización)
+       */
+      syncWithSupabase: async (): Promise<void> => {
+        try {
+          const { data: { user } } = await supabase.auth.getUser();
+          if (!user) {
+            return;
+          }
+
+          // Cargar perfil desde Supabase (RLS asegura que solo sea del usuario)
+          const supabaseProfile = await fetchProfileFromSupabase(user.id);
+          
+          // Actualizar estado solo con perfil de Supabase
+          set({ profile: supabaseProfile });
+        } catch (error) {
+          console.warn('Error al sincronizar perfil con Supabase:', error);
         }
       },
-    }
-  )
+    })
 );
 

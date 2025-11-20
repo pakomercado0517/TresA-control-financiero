@@ -1,11 +1,11 @@
 /**
  * Store de Zustand para gestionar facturas CFDI
  * 
- * Maneja el estado de las facturas, su persistencia y la generación de reportes
+ * Maneja el estado de las facturas y la generación de reportes
+ * Datos solo desde Supabase - sin IndexedDB
  */
 
 import { create } from 'zustand';
-import { persist, createJSONStorage } from 'zustand/middleware';
 import type {
   CFDI,
   InvoiceStore,
@@ -13,92 +13,51 @@ import type {
   ReporteFiltros,
 } from '@/lib/types';
 import { CFDIParser } from '@/lib/xml-parser';
-import { idbStorage } from '@/lib/storage/idb-storage';
 import { validarFacturaIngreso } from '@/lib/utils/invoice-validator';
+import { compararRFCs } from '@/lib/utils/rfc-validator';
 import { useProfileStore as useProfileStoreInstance } from './profile-store';
 import { useExpenseStore as useExpenseStoreInstance } from './expense-store';
 import { calculateReport } from '@/lib/utils/report-calculator';
+import {
+  saveInvoiceToSupabase,
+  syncInvoicesFromSupabase,
+  deleteInvoiceFromSupabase,
+} from '@/lib/supabase/invoices';
+import { supabase } from '@/lib/supabase/client';
 
 /**
- * Convierte fechas de string a Date en un objeto CFDI
- */
-function transformCFDIDates(cfdi: CFDI): CFDI {
-  // Si la fecha ya es un objeto Date, no necesitamos convertirla
-  const fecha =
-    cfdi.fecha instanceof Date
-      ? cfdi.fecha
-      : new Date(cfdi.fecha as unknown as string | Date);
-  
-  // Convertir complemento de pago si existe
-  let complementoPago = cfdi.complementoPago;
-  if (complementoPago) {
-    const fechaPagoComplemento =
-      complementoPago.fechaPago instanceof Date
-        ? complementoPago.fechaPago
-        : new Date(
-            complementoPago.fechaPago as unknown as string | Date
-          );
-    
-    complementoPago = {
-      ...complementoPago,
-      fechaPago: fechaPagoComplemento,
-    };
-
-    // Para complementos de pago, la fecha principal debe ser la fecha de pago del complemento
-    // NO la fecha de timbrado. Verificar si es complemento y ajustar fecha si es necesario
-    if (cfdi.tipo === 'COMPLEMENTO_PAGO' && complementoPago.fechaPago) {
-      // Si la fecha actual no coincide con la fecha de pago del complemento,
-      // usar la fecha de pago (esto puede pasar si se rehidrata desde storage)
-      const fechaActual = fecha.getTime();
-      const fechaPagoComplementoTime = fechaPagoComplemento.getTime();
-      
-      if (Math.abs(fechaActual - fechaPagoComplementoTime) > 1000) {
-        // Hay diferencia significativa, usar fecha de pago
-        console.log(
-          `[Invoice Store] Ajustando fecha de complemento de pago: ${new Date(fechaActual).toISOString()} -> ${fechaPagoComplemento.toISOString()}`
-        );
-        return {
-          ...cfdi,
-          fecha: fechaPagoComplemento,
-          mes: fechaPagoComplemento.getMonth() + 1,
-          año: fechaPagoComplemento.getFullYear(),
-          pagos: cfdi.pagos?.map((pago) => ({
-            ...pago,
-            fechaPago:
-              pago.fechaPago instanceof Date
-                ? pago.fechaPago
-                : new Date(pago.fechaPago as unknown as string | Date),
-          })),
-          complementoPago,
-        };
-      }
-    }
-  }
-  
-  return {
-    ...cfdi,
-    fecha,
-    pagos: cfdi.pagos?.map((pago) => ({
-      ...pago,
-      fechaPago:
-        pago.fechaPago instanceof Date
-          ? pago.fechaPago
-          : new Date(pago.fechaPago as unknown as string | Date),
-    })),
-    complementoPago,
-  };
-}
-
-/**
- * Store de facturas con persistencia
+ * Store de facturas - Datos solo desde Supabase
  */
 export const useInvoiceStore = create<InvoiceStore>()(
-  persist(
-    (set, get) => ({
+  (set, get) => ({
       // Estado inicial
       invoices: [],
       isLoading: false,
       error: null,
+
+      /**
+       * Sincroniza facturas con Supabase (carga desde Supabase)
+       */
+      syncWithSupabase: async (): Promise<void> => {
+        try {
+          const { data: { user } } = await supabase.auth.getUser();
+          if (!user) {
+            // Si no hay usuario, limpiar datos
+            set({ invoices: [] });
+            return;
+          }
+
+          // Cargar facturas desde Supabase (RLS asegura que solo sean del usuario)
+          const supabaseInvoices = await syncInvoicesFromSupabase(user.id);
+
+          // Actualizar estado solo con facturas de Supabase
+          set({
+            invoices: supabaseInvoices,
+          });
+        } catch (error) {
+          console.warn('Error al sincronizar con Supabase:', error);
+        }
+      },
 
       /**
        * Agrega una nueva factura parseando el archivo XML
@@ -124,6 +83,21 @@ export const useInvoiceStore = create<InvoiceStore>()(
           const profileState = useProfileStoreInstance.getState();
           const profile = profileState.profile;
 
+          // VALIDACIÓN CRÍTICA: Verificar que el RFC emisor coincida con el RFC del perfil
+          if (profile && profile.rfc) {
+            const rfcCoincide = compararRFCs(cfdi.rfcEmisor, profile.rfc);
+
+            if (!rfcCoincide) {
+              throw new Error(
+                `No se puede cargar esta factura: El RFC del emisor (${cfdi.rfcEmisor}) no coincide con tu RFC (${profile.rfc}). Esta factura no pertenece a tu empresa.`
+              );
+            }
+          } else if (!profile || !profile.rfc) {
+            throw new Error(
+              'No se puede cargar la factura: Debes configurar tu RFC en el perfil antes de cargar facturas. Ve a Configuración para completar tu perfil.'
+            );
+          }
+
           let validacion: CFDI['validacion'] | undefined;
 
           // Validar factura si hay perfil configurado
@@ -147,6 +121,36 @@ export const useInvoiceStore = create<InvoiceStore>()(
             isLoading: false,
             error: null,
           }));
+
+          // Sincronizar con Supabase si hay usuario autenticado
+          try {
+            const { data: { user }, error: authError } = await supabase.auth.getUser();
+            
+            if (authError) {
+              console.error('Error al obtener usuario autenticado:', authError);
+              throw new Error('No se pudo obtener el usuario autenticado');
+            }
+
+            if (user) {
+              console.log('Guardando factura en Supabase:', {
+                uuid: cfdi.uuid,
+                userId: user.id,
+              });
+              await saveInvoiceToSupabase(cfdi, user.id);
+              console.log('Factura guardada exitosamente en Supabase');
+            } else {
+              console.warn('No hay usuario autenticado, no se guardará en Supabase');
+            }
+          } catch (supabaseError) {
+            // Loggear el error completo para diagnóstico
+            console.error('Error al sincronizar factura con Supabase:', {
+              error: supabaseError,
+              message: supabaseError instanceof Error ? supabaseError.message : String(supabaseError),
+              stack: supabaseError instanceof Error ? supabaseError.stack : undefined,
+            });
+            // No fallar el proceso de carga, pero sí loggear el error
+            // El usuario puede sincronizar manualmente después
+          }
 
           return { cfdi, validacion };
         } catch (error) {
@@ -183,10 +187,20 @@ export const useInvoiceStore = create<InvoiceStore>()(
       /**
        * Elimina una factura por su UUID
        */
-      removeInvoice: (uuid: string): void => {
+      removeInvoice: async (uuid: string): Promise<void> => {
         set((state) => ({
           invoices: state.invoices.filter((inv) => inv.uuid !== uuid),
         }));
+
+        // Sincronizar con Supabase si hay usuario autenticado
+        try {
+          const { data: { user } } = await supabase.auth.getUser();
+          if (user) {
+            await deleteInvoiceFromSupabase(uuid, user.id);
+          }
+        } catch (supabaseError) {
+          console.warn('Error al eliminar factura de Supabase:', supabaseError);
+        }
       },
 
       /**
@@ -301,17 +315,5 @@ export const useInvoiceStore = create<InvoiceStore>()(
           return true;
         });
       },
-    }),
-    {
-      name: 'invoice-storage',
-      storage: createJSONStorage(() => idbStorage),
-      // Convertir fechas de string a Date al leer del storage
-      onRehydrateStorage: () => (state) => {
-        if (state?.invoices) {
-          state.invoices = state.invoices.map(transformCFDIDates);
-        }
-      },
-    }
-  )
+    })
 );
-

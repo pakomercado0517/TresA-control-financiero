@@ -1,12 +1,106 @@
 'use client';
 
+import { useState, useMemo } from 'react';
 import { useInvoiceStore } from '@/store';
 import { Button } from '@/components/ui/button';
-import { Trash2, FileText, CheckCircle2, AlertTriangle, Info } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Trash2, FileText, CheckCircle2, AlertTriangle, Info, Search, X, ChevronUp, ChevronDown } from 'lucide-react';
 import type { CFDI } from '@/lib/types';
+import { MESES } from '@/lib/types';
+
+type SortField = 'fecha' | 'total' | 'tipo' | 'mes' | 'año';
+type SortDirection = 'asc' | 'desc';
 
 export function InvoiceList() {
   const { invoices, removeInvoice } = useInvoiceStore();
+  const [searchTerm, setSearchTerm] = useState('');
+  const [filterTipo, setFilterTipo] = useState<string>('');
+  const [filterMes, setFilterMes] = useState<number | ''>('');
+  const [filterAño, setFilterAño] = useState<number | ''>('');
+  const [sortField, setSortField] = useState<SortField>('fecha');
+  const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 20;
+
+  // Filtrar y ordenar facturas
+  const filteredAndSortedInvoices = useMemo(() => {
+    let filtered = [...invoices];
+
+    // Búsqueda
+    if (searchTerm) {
+      const searchLower = searchTerm.toLowerCase();
+      filtered = filtered.filter(
+        (inv) =>
+          inv.uuid.toLowerCase().includes(searchLower) ||
+          inv.rfcEmisor.toLowerCase().includes(searchLower) ||
+          (inv.nombreEmisor?.toLowerCase().includes(searchLower) ?? false) ||
+          (inv.concepto?.toLowerCase().includes(searchLower) ?? false)
+      );
+    }
+
+    // Filtros
+    if (filterTipo) {
+      filtered = filtered.filter((inv) => inv.tipo === filterTipo);
+    }
+    if (filterMes) {
+      filtered = filtered.filter((inv) => inv.mes === filterMes);
+    }
+    if (filterAño) {
+      filtered = filtered.filter((inv) => inv.año === filterAño);
+    }
+
+    // Ordenamiento
+    filtered.sort((a, b) => {
+      let comparison = 0;
+      switch (sortField) {
+        case 'fecha':
+          comparison = a.fecha.getTime() - b.fecha.getTime();
+          break;
+        case 'total':
+          comparison = a.total - b.total;
+          break;
+        case 'tipo':
+          comparison = a.tipo.localeCompare(b.tipo);
+          break;
+        case 'mes':
+          comparison = a.mes - b.mes;
+          break;
+        case 'año':
+          comparison = a.año - b.año;
+          break;
+      }
+      return sortDirection === 'asc' ? comparison : -comparison;
+    });
+
+    return filtered;
+  }, [invoices, searchTerm, filterTipo, filterMes, filterAño, sortField, sortDirection]);
+
+  // Paginación
+  const totalPages = Math.ceil(filteredAndSortedInvoices.length / itemsPerPage);
+  const paginatedInvoices = useMemo(() => {
+    const start = (currentPage - 1) * itemsPerPage;
+    return filteredAndSortedInvoices.slice(start, start + itemsPerPage);
+  }, [filteredAndSortedInvoices, currentPage]);
+
+  const handleSort = (field: SortField) => {
+    if (sortField === field) {
+      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortField(field);
+      setSortDirection('asc');
+    }
+    setCurrentPage(1);
+  };
+
+  const clearFilters = () => {
+    setSearchTerm('');
+    setFilterTipo('');
+    setFilterMes('');
+    setFilterAño('');
+    setCurrentPage(1);
+  };
+
+  const hasActiveFilters = searchTerm || filterTipo || filterMes || filterAño;
 
   if (invoices.length === 0) {
     return (
@@ -24,32 +118,154 @@ export function InvoiceList() {
 
   return (
     <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
-      <div className="px-6 py-4 border-b border-gray-200">
-        <h2 className="text-xl font-bold">
-          Facturas Cargadas ({invoices.length})
-        </h2>
+      {/* Header con búsqueda y filtros */}
+      <div className="px-6 py-4 border-b border-gray-200 space-y-4">
+        <div className="flex justify-between items-center">
+          <h2 className="text-xl font-bold">
+            Facturas Cargadas ({filteredAndSortedInvoices.length} de {invoices.length})
+          </h2>
+          {hasActiveFilters && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={clearFilters}
+              className="text-sm"
+            >
+              <X className="h-4 w-4 mr-1" />
+              Limpiar filtros
+            </Button>
+          )}
+        </div>
+
+        {/* Búsqueda */}
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+          <Input
+            type="text"
+            placeholder="Buscar por UUID, RFC, nombre o concepto..."
+            value={searchTerm}
+            onChange={(e) => {
+              setSearchTerm(e.target.value);
+              setCurrentPage(1);
+            }}
+            className="pl-10"
+          />
+        </div>
+
+        {/* Filtros */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div>
+            <label className="block text-xs font-medium text-gray-700 mb-1">
+              Tipo
+            </label>
+            <select
+              value={filterTipo}
+              onChange={(e) => {
+                setFilterTipo(e.target.value);
+                setCurrentPage(1);
+              }}
+              className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+            >
+              <option value="">Todos</option>
+              <option value="PUE">PUE</option>
+              <option value="PPD">PPD</option>
+              <option value="COMPLEMENTO_PAGO">Complemento de Pago</option>
+            </select>
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-gray-700 mb-1">
+              Mes
+            </label>
+            <select
+              value={filterMes}
+              onChange={(e) => {
+                setFilterMes(e.target.value === '' ? '' : parseInt(e.target.value, 10));
+                setCurrentPage(1);
+              }}
+              className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+            >
+              <option value="">Todos</option>
+              {MESES.map((mesNombre, index) => (
+                <option key={index} value={index + 1}>
+                  {mesNombre}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-gray-700 mb-1">
+              Año
+            </label>
+            <Input
+              type="number"
+              value={filterAño}
+              onChange={(e) => {
+                setFilterAño(e.target.value === '' ? '' : parseInt(e.target.value, 10));
+                setCurrentPage(1);
+              }}
+              placeholder="Ej: 2024"
+              className="text-sm"
+              min="2020"
+              max="2030"
+            />
+          </div>
+        </div>
       </div>
+
+      {/* Tabla */}
       <div className="overflow-x-auto">
         <table className="w-full">
           <thead className="bg-gray-50">
             <tr>
               <th className="text-left px-6 py-3 text-sm font-semibold text-gray-700">
+                <button
+                  onClick={() => handleSort('fecha')}
+                  className="flex items-center gap-1 hover:text-gray-900"
+                >
+                  Fecha
+                  {sortField === 'fecha' && (
+                    sortDirection === 'asc' ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />
+                  )}
+                </button>
+              </th>
+              <th className="text-left px-6 py-3 text-sm font-semibold text-gray-700">
                 UUID
               </th>
               <th className="text-left px-6 py-3 text-sm font-semibold text-gray-700">
-                Fecha
-              </th>
-              <th className="text-left px-6 py-3 text-sm font-semibold text-gray-700">
-                Tipo
+                <button
+                  onClick={() => handleSort('tipo')}
+                  className="flex items-center gap-1 hover:text-gray-900"
+                >
+                  Tipo
+                  {sortField === 'tipo' && (
+                    sortDirection === 'asc' ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />
+                  )}
+                </button>
               </th>
               <th className="text-right px-6 py-3 text-sm font-semibold text-gray-700">
-                Total
+                <button
+                  onClick={() => handleSort('total')}
+                  className="flex items-center gap-1 hover:text-gray-900 ml-auto"
+                >
+                  Total
+                  {sortField === 'total' && (
+                    sortDirection === 'asc' ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />
+                  )}
+                </button>
               </th>
               <th className="text-left px-6 py-3 text-sm font-semibold text-gray-700">
                 Emisor
               </th>
               <th className="text-left px-6 py-3 text-sm font-semibold text-gray-700">
-                Mes/Año
+                <button
+                  onClick={() => handleSort('mes')}
+                  className="flex items-center gap-1 hover:text-gray-900"
+                >
+                  Mes/Año
+                  {sortField === 'mes' && (
+                    sortDirection === 'asc' ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />
+                  )}
+                </button>
               </th>
               <th className="text-left px-6 py-3 text-sm font-semibold text-gray-700">
                 Validación
@@ -60,23 +276,61 @@ export function InvoiceList() {
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-200">
-            {invoices.map((invoice) => (
-              <InvoiceRow
-                key={invoice.uuid}
-                invoice={invoice}
-                onRemove={removeInvoice}
-              />
-            ))}
+            {paginatedInvoices.length === 0 ? (
+              <tr>
+                <td colSpan={8} className="px-6 py-12 text-center text-gray-500">
+                  No se encontraron facturas con los filtros aplicados
+                </td>
+              </tr>
+            ) : (
+              paginatedInvoices.map((invoice) => (
+                <InvoiceRow
+                  key={invoice.uuid}
+                  invoice={invoice}
+                  onRemove={removeInvoice}
+                />
+              ))
+            )}
           </tbody>
         </table>
       </div>
+
+      {/* Paginación */}
+      {totalPages > 1 && (
+        <div className="px-6 py-4 border-t border-gray-200 flex justify-between items-center">
+          <p className="text-sm text-gray-600">
+            Mostrando {(currentPage - 1) * itemsPerPage + 1} - {Math.min(currentPage * itemsPerPage, filteredAndSortedInvoices.length)} de {filteredAndSortedInvoices.length}
+          </p>
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+              disabled={currentPage === 1}
+            >
+              Anterior
+            </Button>
+            <span className="flex items-center px-4 text-sm text-gray-600">
+              Página {currentPage} de {totalPages}
+            </span>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+              disabled={currentPage === totalPages}
+            >
+              Siguiente
+            </Button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
 
 interface InvoiceRowProps {
   invoice: CFDI;
-  onRemove: (uuid: string) => void;
+  onRemove: (uuid: string) => Promise<void>;
 }
 
 function InvoiceRow({ invoice, onRemove }: InvoiceRowProps) {
@@ -152,7 +406,11 @@ function InvoiceRow({ invoice, onRemove }: InvoiceRowProps) {
         <Button
           variant="ghost"
           size="sm"
-          onClick={() => onRemove(invoice.uuid)}
+          onClick={() => {
+            onRemove(invoice.uuid).catch((error) => {
+              console.error('Error al eliminar factura:', error);
+            });
+          }}
           className="text-red-600 hover:text-red-700 hover:bg-red-50"
         >
           <Trash2 className="h-4 w-4" />

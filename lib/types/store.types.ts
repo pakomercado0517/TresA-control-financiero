@@ -20,11 +20,12 @@ export interface InvoiceStoreState {
 export interface InvoiceStoreActions {
   addInvoice: (file: File) => Promise<{ cfdi: CFDI; validacion?: CFDI['validacion'] }>;
   importInvoices: (invoices: CFDI[]) => void;
-  removeInvoice: (uuid: string) => void;
+  removeInvoice: (uuid: string) => Promise<void>;
   clearInvoices: () => void;
   getReport: (mes: number, año: number) => Reporte | null;
   getAllReports: () => Reporte[];
   getFilteredInvoices: (filtros: ReporteFiltros) => CFDI[];
+  syncWithSupabase: () => Promise<void>;
 }
 
 /**

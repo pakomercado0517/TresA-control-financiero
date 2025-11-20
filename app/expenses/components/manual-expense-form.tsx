@@ -39,12 +39,12 @@ export function ManualExpenseForm() {
     },
   });
 
-  const onSubmit = (data: ManualExpenseFormData) => {
+  const onSubmit = async (data: ManualExpenseFormData) => {
     try {
       const fecha = new Date(data.fecha);
       const monto = parseFloat(data.monto);
 
-      addExpenseManual({
+      await addExpenseManual({
         fecha,
         monto,
         concepto: data.concepto,

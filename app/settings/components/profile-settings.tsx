@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useProfileStore } from '@/store/profile-store';
+import { useAuth } from '@/lib/supabase/auth-context';
 import { Button } from '@/components/ui/button';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -33,10 +34,13 @@ export function ProfileSettings() {
     setProfile,
     updateProfile,
     updateValidaciones,
+    syncWithSupabase,
     error: storeError,
   } = useProfileStore();
+  const { user, loading: authLoading } = useAuth();
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [rfcTipo, setRfcTipo] = useState<TipoPersona | null>(null);
+  const [isLoadingProfile, setIsLoadingProfile] = useState(true);
 
   const {
     register,
@@ -58,18 +62,35 @@ export function ProfileSettings() {
     },
   });
 
-  // Cargar perfil existente
+  // Cargar perfil desde Supabase al montar el componente
+  useEffect(() => {
+    if (!authLoading && user) {
+      setIsLoadingProfile(true);
+      syncWithSupabase()
+        .then(() => {
+          setIsLoadingProfile(false);
+        })
+        .catch((error) => {
+          console.error('Error al cargar perfil desde Supabase:', error);
+          setIsLoadingProfile(false);
+        });
+    } else if (!authLoading && !user) {
+      setIsLoadingProfile(false);
+    }
+  }, [user, authLoading, syncWithSupabase]);
+
+  // Cargar perfil existente en el formulario cuando esté disponible
   useEffect(() => {
     if (profile) {
       reset({
-        nombre: profile.nombre,
-        rfc: profile.rfc,
-        tipoPersona: profile.tipoPersona,
+        nombre: profile.nombre || '',
+        rfc: profile.rfc || '',
+        tipoPersona: profile.tipoPersona || 'MORAL',
         email: profile.email || '',
-        validarRFCIngresos: profile.validacionesHabilitadas.validarRFCIngresos,
-        validarRFCGastos: profile.validacionesHabilitadas.validarRFCGastos,
+        validarRFCIngresos: profile.validacionesHabilitadas?.validarRFCIngresos ?? false,
+        validarRFCGastos: profile.validacionesHabilitadas?.validarRFCGastos ?? false,
         validarMatchesComplementos:
-          profile.validacionesHabilitadas.validarMatchesComplementos,
+          profile.validacionesHabilitadas?.validarMatchesComplementos ?? false,
       });
       setRfcTipo(profile.tipoPersona);
     }
@@ -125,6 +146,20 @@ export function ProfileSettings() {
       console.error('Error al guardar perfil:', error);
     }
   };
+
+  // Mostrar loading mientras se carga el perfil desde Supabase
+  if (isLoadingProfile || authLoading) {
+    return (
+      <div className="bg-white border border-gray-200 rounded-lg p-6">
+        <div className="flex items-center justify-center py-12">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+            <p className="text-gray-600">Cargando perfil desde la base de datos...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="bg-white border border-gray-200 rounded-lg p-6">

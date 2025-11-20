@@ -2,10 +2,10 @@
  * Store de Zustand para gestionar gastos/compras
  * 
  * Maneja gastos extraídos de XML y gastos ingresados manualmente
+ * Datos solo desde Supabase - sin IndexedDB
  */
 
 import { create } from 'zustand';
-import { persist, createJSONStorage } from 'zustand/middleware';
 import type {
   Gasto,
   GastoManual,
@@ -13,53 +13,16 @@ import type {
   ReporteFiltros,
 } from '@/lib/types';
 import { CFDIParser } from '@/lib/xml-parser';
-import { idbStorage } from '@/lib/storage/idb-storage';
 import { validarGasto } from '@/lib/utils/expense-validator';
+import { compararRFCs } from '@/lib/utils/rfc-validator';
 import { useProfileStore as useProfileStoreInstance } from './profile-store';
 import { useInvoiceStore as useInvoiceStoreInstance } from './invoice-store';
-
-/**
- * Convierte fechas de string a Date en un objeto de gasto
- */
-function transformGastoDates(gasto: Gasto): Gasto {
-  // Si la fecha ya es un objeto Date, no necesitamos convertirla
-  const fecha =
-    gasto.fecha instanceof Date
-      ? gasto.fecha
-      : new Date(gasto.fecha as unknown as string | Date);
-  
-  if (gasto.tipoOrigen === 'MANUAL') {
-    return {
-      ...gasto,
-      fecha,
-    } as GastoManual;
-  }
-
-  // Gasto XML
-  const gastoXML = gasto as GastoXML;
-  return {
-    ...gastoXML,
-    fecha,
-    pagos: gastoXML.pagos?.map((pago) => ({
-      ...pago,
-      fechaPago:
-        pago.fechaPago instanceof Date
-          ? pago.fechaPago
-          : new Date(pago.fechaPago as unknown as string | Date),
-    })),
-    complementoPago: gastoXML.complementoPago
-      ? {
-          ...gastoXML.complementoPago,
-          fechaPago:
-            gastoXML.complementoPago.fechaPago instanceof Date
-              ? gastoXML.complementoPago.fechaPago
-              : new Date(
-                  gastoXML.complementoPago.fechaPago as unknown as string | Date
-                ),
-        }
-      : undefined,
-  } as GastoXML;
-}
+import {
+  saveExpenseToSupabase,
+  fetchExpensesFromSupabase,
+  deleteExpenseFromSupabase,
+} from '@/lib/supabase/expenses';
+import { supabase } from '@/lib/supabase/client';
 
 interface ExpenseStoreState {
   gastos: Gasto[];
@@ -70,20 +33,20 @@ interface ExpenseStoreState {
 interface ExpenseStoreActions {
   addExpenseXML: (file: File) => Promise<{ gasto: GastoXML; validacion?: GastoXML['validacion'] }>;
   importExpenses: (expenses: Gasto[]) => void;
-  addExpenseManual: (gasto: Omit<GastoManual, 'id' | 'mes' | 'año' | 'tipoOrigen' | 'tipo'> & { tipo?: 'PUE' | 'PPD' }) => void;
-  removeExpense: (id: string) => void;
+  addExpenseManual: (gasto: Omit<GastoManual, 'id' | 'mes' | 'año' | 'tipoOrigen' | 'tipo'> & { tipo?: 'PUE' | 'PPD' }) => Promise<void>;
+  removeExpense: (id: string) => Promise<void>;
   clearExpenses: () => void;
   getFilteredExpenses: (filtros: ReporteFiltros) => Gasto[];
+  syncWithSupabase: () => Promise<void>;
 }
 
 export type ExpenseStore = ExpenseStoreState & ExpenseStoreActions;
 
 /**
- * Store de gastos con persistencia
+ * Store de gastos - Datos solo desde Supabase
  */
 export const useExpenseStore = create<ExpenseStore>()(
-  persist(
-    (set, get) => ({
+  (set, get) => ({
       // Estado inicial
       gastos: [],
       isLoading: false,
@@ -114,6 +77,22 @@ export const useExpenseStore = create<ExpenseStore>()(
           // Obtener perfil del cliente para validaciones
           const profileState = useProfileStoreInstance.getState();
           const profile = profileState.profile;
+
+          // VALIDACIÓN CRÍTICA: Verificar que el RFC receptor coincida con el RFC del perfil
+          // En gastos, el cliente es el receptor de la factura
+          if (profile && profile.rfc) {
+            const rfcCoincide = compararRFCs(cfdi.rfcReceptor, profile.rfc);
+
+            if (!rfcCoincide) {
+              throw new Error(
+                `No se puede cargar este gasto: El RFC del receptor (${cfdi.rfcReceptor}) no coincide con tu RFC (${profile.rfc}). Esta factura no pertenece a tu empresa.`
+              );
+            }
+          } else if (!profile || !profile.rfc) {
+            throw new Error(
+              'No se puede cargar el gasto: Debes configurar tu RFC en el perfil antes de cargar gastos. Ve a Configuración para completar tu perfil.'
+            );
+          }
 
           // Convertir CFDI a GastoXML
           const gastoXML: GastoXML = {
@@ -155,14 +134,6 @@ export const useExpenseStore = create<ExpenseStore>()(
 
             // Agregar validación al gasto
             gastoXML.validacion = validacion;
-
-            // Si hay errores y la validación está habilitada, bloquear carga
-            if (
-              validacion.errores.length > 0 &&
-              profile.validacionesHabilitadas.validarRFCGastos
-            ) {
-              throw new Error(validacion.errores.join(' '));
-            }
           }
 
           set((state) => ({
@@ -170,6 +141,36 @@ export const useExpenseStore = create<ExpenseStore>()(
             isLoading: false,
             error: null,
           }));
+
+          // Sincronizar con Supabase si hay usuario autenticado
+          try {
+            const { data: { user }, error: authError } = await supabase.auth.getUser();
+            
+            if (authError) {
+              console.error('Error al obtener usuario autenticado:', authError);
+              throw new Error('No se pudo obtener el usuario autenticado');
+            }
+
+            if (user) {
+              console.log('Guardando gasto en Supabase:', {
+                uuid: gastoXML.uuid,
+                userId: user.id,
+              });
+              await saveExpenseToSupabase(gastoXML, user.id);
+              console.log('Gasto guardado exitosamente en Supabase');
+            } else {
+              console.warn('No hay usuario autenticado, no se guardará en Supabase');
+            }
+          } catch (supabaseError) {
+            // Loggear el error completo para diagnóstico
+            console.error('Error al sincronizar gasto con Supabase:', {
+              error: supabaseError,
+              message: supabaseError instanceof Error ? supabaseError.message : String(supabaseError),
+              stack: supabaseError instanceof Error ? supabaseError.stack : undefined,
+            });
+            // No fallar el proceso de carga, pero sí loggear el error
+            // El usuario puede sincronizar manualmente después
+          }
 
           return { gasto: gastoXML, validacion };
         } catch (error) {
@@ -206,7 +207,7 @@ export const useExpenseStore = create<ExpenseStore>()(
       /**
        * Agrega un gasto manual
        */
-      addExpenseManual: (gasto: Omit<GastoManual, 'id' | 'mes' | 'año' | 'tipoOrigen' | 'tipo'> & { tipo?: 'PUE' | 'PPD' }): void => {
+      addExpenseManual: async (gasto: Omit<GastoManual, 'id' | 'mes' | 'año' | 'tipoOrigen' | 'tipo'> & { tipo?: 'PUE' | 'PPD' }): Promise<void> => {
         const fecha = gasto.fecha;
         const mes = fecha.getMonth() + 1;
         const año = fecha.getFullYear();
@@ -225,15 +226,35 @@ export const useExpenseStore = create<ExpenseStore>()(
           gastos: [...state.gastos, gastoManual],
           error: null,
         }));
+
+        // Sincronizar con Supabase si hay usuario autenticado
+        try {
+          const { data: { user } } = await supabase.auth.getUser();
+          if (user) {
+            await saveExpenseToSupabase(gastoManual, user.id);
+          }
+        } catch (supabaseError) {
+          console.warn('Error al sincronizar gasto manual con Supabase:', supabaseError);
+        }
       },
 
       /**
        * Elimina un gasto por su ID
        */
-      removeExpense: (id: string): void => {
+      removeExpense: async (id: string): Promise<void> => {
         set((state) => ({
           gastos: state.gastos.filter((gasto) => gasto.id !== id),
         }));
+
+        // Sincronizar con Supabase si hay usuario autenticado
+        try {
+          const { data: { user } } = await supabase.auth.getUser();
+          if (user) {
+            await deleteExpenseFromSupabase(id, user.id);
+          }
+        } catch (supabaseError) {
+          console.warn('Error al eliminar gasto de Supabase:', supabaseError);
+        }
       },
 
       /**
@@ -241,6 +262,30 @@ export const useExpenseStore = create<ExpenseStore>()(
        */
       clearExpenses: (): void => {
         set({ gastos: [], error: null });
+      },
+
+      /**
+       * Sincroniza gastos con Supabase (carga desde Supabase)
+       */
+      syncWithSupabase: async (): Promise<void> => {
+        try {
+          const { data: { user } } = await supabase.auth.getUser();
+          if (!user) {
+            // Si no hay usuario, limpiar datos
+            set({ gastos: [] });
+            return;
+          }
+
+          // Cargar gastos desde Supabase (RLS asegura que solo sean del usuario)
+          const supabaseExpenses = await fetchExpensesFromSupabase(user.id);
+
+          // Actualizar estado solo con gastos de Supabase
+          set({
+            gastos: supabaseExpenses,
+          });
+        } catch (error) {
+          console.warn('Error al sincronizar gastos con Supabase:', error);
+        }
       },
 
       /**
@@ -289,17 +334,5 @@ export const useExpenseStore = create<ExpenseStore>()(
           return true;
         });
       },
-    }),
-    {
-      name: 'expense-storage',
-      storage: createJSONStorage(() => idbStorage),
-      // Convertir fechas de string a Date al leer del storage
-      onRehydrateStorage: () => (state) => {
-        if (state?.gastos) {
-          state.gastos = state.gastos.map(transformGastoDates);
-        }
-      },
-    }
-  )
+    })
 );
-

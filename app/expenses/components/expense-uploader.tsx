@@ -61,7 +61,13 @@ export function ExpenseUploader() {
           errorCount++;
           const errorMsg =
             err instanceof Error ? err.message : 'Error desconocido';
-          toast.error(`Error en ${file.name}: ${errorMsg}`);
+          
+          // Mostrar error con duración más larga para errores críticos de RFC
+          const isRFCError = errorMsg.includes('RFC') || errorMsg.includes('perfil');
+          toast.error(`Error en ${file.name}`, {
+            description: errorMsg,
+            duration: isRFCError ? 8000 : 5000, // 8 segundos para errores de RFC, 5 para otros
+          });
           console.error('Error al procesar archivo:', file.name, err);
         }
       }
@@ -139,7 +145,13 @@ export function ExpenseUploader() {
           errorCount++;
           const errorMsg =
             err instanceof Error ? err.message : 'Error desconocido';
-          toast.error(`Error en ${file.name}: ${errorMsg}`);
+          
+          // Mostrar error con duración más larga para errores críticos de RFC
+          const isRFCError = errorMsg.includes('RFC') || errorMsg.includes('perfil');
+          toast.error(`Error en ${file.name}`, {
+            description: errorMsg,
+            duration: isRFCError ? 8000 : 5000, // 8 segundos para errores de RFC, 5 para otros
+          });
           console.error('Error al procesar archivo:', file.name, err);
         }
       }

@@ -4,6 +4,8 @@ import "./globals.css";
 import { Navigation } from "./components/navigation";
 import { Toaster } from "sonner";
 import { ServiceWorkerRegister } from "./components/service-worker-register";
+import { AuthProvider } from "@/lib/supabase/auth-context";
+import { SupabaseSync } from "./components/supabase-sync";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -55,10 +57,13 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <ServiceWorkerRegister />
-        <Navigation />
-        <main className="min-h-screen bg-gray-50">{children}</main>
-        <Toaster position="top-right" richColors />
+        <AuthProvider>
+          <SupabaseSync />
+          <ServiceWorkerRegister />
+          <Navigation />
+          <main className="min-h-screen bg-gray-50">{children}</main>
+          <Toaster position="top-right" richColors />
+        </AuthProvider>
       </body>
     </html>
   );
