@@ -1,9 +1,9 @@
 /**
- * Service Worker para EBN Financial Reports
+ * Service Worker para TresA Control Financiero
  * Implementación simple siguiendo la documentación oficial de Next.js 16
  */
 
-const CACHE_NAME = 'ebn-financial-reports-v1';
+const CACHE_NAME = 'tresa-control-financiero-v2'; // Actualizado para forzar refresh de iconos
 const urlsToCache = [
   '/',
   '/dashboard',
@@ -52,14 +52,18 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // No cachear solicitudes a la API, recursos externos, o archivos estáticos de Next.js
+  // No cachear solicitudes a la API, recursos externos, archivos estáticos de Next.js, o iconos PWA
   if (
     event.request.url.includes('/api/') ||
     event.request.url.includes('chrome-extension://') ||
     event.request.url.includes('_next/static') ||
     event.request.url.includes('_next/data') ||
     event.request.url.includes('hot-update') ||
-    event.request.url.includes('webpack-hmr')
+    event.request.url.includes('webpack-hmr') ||
+    event.request.url.includes('/icon-') ||
+    event.request.url.includes('/favicon') ||
+    event.request.url.includes('/apple-touch-icon') ||
+    event.request.url.includes('/manifest.json')
   ) {
     return;
   }
@@ -113,7 +117,7 @@ self.addEventListener('push', (event) => {
       },
     };
     event.waitUntil(
-      self.registration.showNotification(data.title || 'EBN Financial Reports', options)
+      self.registration.showNotification(data.title || 'TresA Control Financiero', options)
     );
   }
 });
