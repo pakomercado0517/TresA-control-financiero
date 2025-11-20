@@ -15,6 +15,10 @@ if (!supabaseUrl || !supabaseAnonKey) {
   );
 }
 
+// TypeScript ahora sabe que estas variables son strings después de la validación
+const SUPABASE_URL: string = supabaseUrl;
+const SUPABASE_ANON_KEY: string = supabaseAnonKey;
+
 /**
  * Obtiene el cliente de Supabase para el servidor con la sesión del usuario
  */
@@ -23,7 +27,7 @@ export async function getSupabaseServerClient() {
   const accessToken = cookieStore.get('sb-access-token')?.value;
   const refreshToken = cookieStore.get('sb-refresh-token')?.value;
 
-  const client = createClient(supabaseUrl, supabaseAnonKey, {
+  const client = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
     auth: {
       persistSession: false,
       autoRefreshToken: false,

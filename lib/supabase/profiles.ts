@@ -3,7 +3,7 @@
  */
 
 import { supabase } from './client';
-import type { ClienteProfile } from '@/lib/types';
+import type { ClienteProfile, ValidacionesConfig } from '@/lib/types';
 
 /**
  * Convierte un ClienteProfile a formato de base de datos
@@ -38,11 +38,23 @@ function dbToProfile(row: {
     nombre: row.nombre || '',
     rfc: row.rfc || '',
     tipoPersona: (row.tipo_persona || 'FISICA') as ClienteProfile['tipoPersona'],
-    validacionesHabilitadas: row.validaciones_habilitadas || {
-      validarRFCIngresos: false,
-      validarRFCGastos: false,
-      validarMatchesComplementos: false,
-    },
+    validacionesHabilitadas: ((): ValidacionesConfig => {
+      const validaciones = row.validaciones_habilitadas;
+      if (
+        validaciones &&
+        typeof validaciones === 'object' &&
+        'validarRFCIngresos' in validaciones &&
+        'validarRFCGastos' in validaciones &&
+        'validarMatchesComplementos' in validaciones
+      ) {
+        return validaciones as ValidacionesConfig;
+      }
+      return {
+        validarRFCIngresos: false,
+        validarRFCGastos: false,
+        validarMatchesComplementos: false,
+      };
+    })(),
     fechaCreacion: new Date(row.created_at),
     fechaActualizacion: new Date(row.updated_at),
   };
