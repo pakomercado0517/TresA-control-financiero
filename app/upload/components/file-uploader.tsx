@@ -1,11 +1,11 @@
-'use client';
+"use client";
 
-import { useState, useCallback } from 'react';
-import { useInvoiceStore } from '@/store';
-import { useProfileGuard } from '@/lib/hooks/use-profile-guard';
-import { Button } from '@/components/ui/button';
-import { Upload, FileX, CheckCircle2, AlertTriangle } from 'lucide-react';
-import { toast } from 'sonner';
+import { useState, useCallback } from "react";
+import { useInvoiceStore } from "@/store";
+import { useProfileGuard } from "@/lib/hooks/use-profile-guard";
+import { Upload, FileX, CheckCircle2, FileUp } from "lucide-react";
+import { toast } from "sonner";
+import { Item, ItemContent, ItemTitle } from "@/components/ui/item";
 
 export function FileUploader() {
   const { addInvoice, isLoading, error } = useInvoiceStore();
@@ -23,9 +23,9 @@ export function FileUploader() {
       // Verificar si se puede cargar
       if (!canUpload) {
         toast.error(
-          'Debes configurar tu perfil antes de cargar facturas. Ve a Configuración para configurar tu RFC.'
+          "Debes configurar tu perfil antes de cargar facturas. Ve a Configuración para configurar tu RFC."
         );
-        event.target.value = '';
+        event.target.value = "";
         return;
       }
 
@@ -38,9 +38,9 @@ export function FileUploader() {
 
       for (const file of Array.from(files)) {
         if (
-          !file.name.endsWith('.xml') &&
-          file.type !== 'application/xml' &&
-          file.type !== 'text/xml'
+          !file.name.endsWith(".xml") &&
+          file.type !== "application/xml" &&
+          file.type !== "text/xml"
         ) {
           errorCount++;
           continue;
@@ -64,22 +64,23 @@ export function FileUploader() {
         } catch (err) {
           errorCount++;
           const errorMsg =
-            err instanceof Error ? err.message : 'Error desconocido';
-          
+            err instanceof Error ? err.message : "Error desconocido";
+
           // Mostrar error con duración más larga para errores críticos de RFC
-          const isRFCError = errorMsg.includes('RFC') || errorMsg.includes('perfil');
+          const isRFCError =
+            errorMsg.includes("RFC") || errorMsg.includes("perfil");
           toast.error(`Error en ${file.name}`, {
             description: errorMsg,
             duration: isRFCError ? 8000 : 5000, // 8 segundos para errores de RFC, 5 para otros
           });
-          console.error('Error al procesar archivo:', file.name, err);
+          console.error("Error al procesar archivo:", file.name, err);
         }
       }
 
       if (successCount > 0) {
         setSuccessMessage(
           `${successCount} factura(s) cargada(s) correctamente${
-            errorCount > 0 ? `. ${errorCount} error(es)` : ''
+            errorCount > 0 ? `. ${errorCount} error(es)` : ""
           }`
         );
         toast.success(`${successCount} factura(s) cargada(s)`);
@@ -92,14 +93,17 @@ export function FileUploader() {
       }
 
       // Limpiar el input
-      event.target.value = '';
+      event.target.value = "";
     },
     [addInvoice, canUpload]
   );
 
-  const handleDragOver = useCallback((event: React.DragEvent<HTMLDivElement>) => {
-    event.preventDefault();
-  }, []);
+  const handleDragOver = useCallback(
+    (event: React.DragEvent<HTMLDivElement>) => {
+      event.preventDefault();
+    },
+    []
+  );
 
   const handleDrop = useCallback(
     async (event: React.DragEvent<HTMLDivElement>) => {
@@ -113,7 +117,7 @@ export function FileUploader() {
       // Verificar si se puede cargar
       if (!canUpload) {
         toast.error(
-          'Debes configurar tu perfil antes de cargar facturas. Ve a Configuración para configurar tu RFC.'
+          "Debes configurar tu perfil antes de cargar facturas. Ve a Configuración para configurar tu RFC."
         );
         return;
       }
@@ -127,9 +131,9 @@ export function FileUploader() {
 
       for (const file of Array.from(files)) {
         if (
-          !file.name.endsWith('.xml') &&
-          file.type !== 'application/xml' &&
-          file.type !== 'text/xml'
+          !file.name.endsWith(".xml") &&
+          file.type !== "application/xml" &&
+          file.type !== "text/xml"
         ) {
           errorCount++;
           continue;
@@ -153,22 +157,23 @@ export function FileUploader() {
         } catch (err) {
           errorCount++;
           const errorMsg =
-            err instanceof Error ? err.message : 'Error desconocido';
-          
+            err instanceof Error ? err.message : "Error desconocido";
+
           // Mostrar error con duración más larga para errores críticos de RFC
-          const isRFCError = errorMsg.includes('RFC') || errorMsg.includes('perfil');
+          const isRFCError =
+            errorMsg.includes("RFC") || errorMsg.includes("perfil");
           toast.error(`Error en ${file.name}`, {
             description: errorMsg,
             duration: isRFCError ? 8000 : 5000, // 8 segundos para errores de RFC, 5 para otros
           });
-          console.error('Error al procesar archivo:', file.name, err);
+          console.error("Error al procesar archivo:", file.name, err);
         }
       }
 
       if (successCount > 0) {
         setSuccessMessage(
           `${successCount} factura(s) cargada(s) correctamente${
-            errorCount > 0 ? `. ${errorCount} error(es)` : ''
+            errorCount > 0 ? `. ${errorCount} error(es)` : ""
           }`
         );
         toast.success(`${successCount} factura(s) cargada(s)`);
@@ -201,24 +206,44 @@ export function FileUploader() {
         />
         <label
           htmlFor="xml-file-input"
-          className={canUpload ? 'cursor-pointer flex flex-col items-center gap-4' : 'cursor-not-allowed flex flex-col items-center gap-4 opacity-50'}
+          className={
+            canUpload
+              ? "cursor-pointer flex flex-col items-center gap-4"
+              : "cursor-not-allowed flex flex-col items-center gap-4 opacity-50"
+          }
         >
-          <Upload className={canUpload ? 'h-16 w-16 text-gray-400' : 'h-16 w-16 text-gray-300'} />
+          <Upload
+            className={
+              canUpload ? "h-16 w-16 text-gray-400" : "h-16 w-16 text-gray-300"
+            }
+          />
           <div>
-            <p className={`text-lg font-medium mb-2 ${canUpload ? 'text-gray-700' : 'text-gray-400'}`}>
+            <p
+              className={`text-lg font-medium mb-2 ${
+                canUpload ? "text-gray-700" : "text-gray-400"
+              }`}
+            >
               Arrastra facturas XML aquí o haz clic para seleccionar
             </p>
-            <p className={`text-sm mb-4 ${canUpload ? 'text-gray-500' : 'text-gray-400'}`}>
+            <p
+              className={`text-sm mb-4 ${
+                canUpload ? "text-gray-500" : "text-gray-400"
+              }`}
+            >
               Puedes seleccionar múltiples archivos a la vez
             </p>
-            <Button 
-              type="button" 
-              variant="outline" 
-              disabled={isLoading || !canUpload} 
-              size="lg"
-            >
-              {isLoading ? 'Procesando...' : !canUpload ? 'Configura tu perfil primero' : 'Seleccionar archivos XML'}
-            </Button>
+            <Item variant="outline" className="text-[#0047AB] font-semibold">
+              <ItemContent>
+                <ItemTitle>
+                  {isLoading
+                    ? "Procesando..."
+                    : !canUpload
+                    ? "Configura tu perfil primero"
+                    : "Seleccionar archivos XML"}
+                </ItemTitle>
+              </ItemContent>
+              <FileUp className="h-6 w-6" />
+            </Item>
           </div>
         </label>
       </div>
@@ -242,4 +267,3 @@ export function FileUploader() {
     </div>
   );
 }
-
