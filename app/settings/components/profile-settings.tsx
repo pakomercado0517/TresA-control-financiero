@@ -1,26 +1,29 @@
-'use client';
+"use client";
 
-import { useState, useEffect } from 'react';
-import { useProfileStore } from '@/store/profile-store';
-import { useAuth } from '@/lib/supabase/auth-context';
-import { Button } from '@/components/ui/button';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
-import { Save, CheckCircle2, AlertCircle, User } from 'lucide-react';
-import { validarFormatoRFC, determinarTipoPersona } from '@/lib/utils/rfc-validator';
-import type { TipoPersona } from '@/lib/types';
+import { useState, useEffect } from "react";
+import { useProfileStore } from "@/store/profile-store";
+import { useAuth } from "@/lib/supabase/auth-context";
+import { Button } from "@/components/ui/button";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { Save, CheckCircle2, AlertCircle, User } from "lucide-react";
+import {
+  validarFormatoRFC,
+  determinarTipoPersona,
+} from "@/lib/utils/rfc-validator";
+import type { TipoPersona } from "@/lib/types";
 
 const profileSchema = z.object({
-  nombre: z.string().min(1, 'El nombre es requerido'),
+  nombre: z.string().min(1, "El nombre es requerido"),
   rfc: z
     .string()
-    .min(1, 'El RFC es requerido')
+    .min(1, "El RFC es requerido")
     .refine((rfc) => validarFormatoRFC(rfc), {
-      message: 'El RFC no tiene un formato válido',
+      message: "El RFC no tiene un formato válido",
     }),
-  tipoPersona: z.enum(['FISICA', 'MORAL']),
-  email: z.string().email('Email inválido').optional().or(z.literal('')),
+  tipoPersona: z.enum(["FISICA", "MORAL"]),
+  email: z.string().email("Email inválido").optional().or(z.literal("")),
   validarRFCIngresos: z.boolean(),
   validarRFCGastos: z.boolean(),
   validarMatchesComplementos: z.boolean(),
@@ -52,15 +55,17 @@ export function ProfileSettings() {
   } = useForm<ProfileFormData>({
     resolver: zodResolver(profileSchema),
     defaultValues: {
-      nombre: '',
-      rfc: '',
-      tipoPersona: 'MORAL',
-      email: '',
+      nombre: "",
+      rfc: "",
+      tipoPersona: "MORAL",
+      email: "",
       validarRFCIngresos: true,
       validarRFCGastos: true,
       validarMatchesComplementos: true,
     },
   });
+
+  console.log("profile", profile);
 
   // Cargar perfil desde Supabase al montar el componente
   useEffect(() => {
@@ -71,7 +76,7 @@ export function ProfileSettings() {
           setIsLoadingProfile(false);
         })
         .catch((error) => {
-          console.error('Error al cargar perfil desde Supabase:', error);
+          console.error("Error al cargar perfil desde Supabase:", error);
           setIsLoadingProfile(false);
         });
     } else if (!authLoading && !user) {
@@ -83,12 +88,14 @@ export function ProfileSettings() {
   useEffect(() => {
     if (profile) {
       reset({
-        nombre: profile.nombre || '',
-        rfc: profile.rfc || '',
-        tipoPersona: profile.tipoPersona || 'MORAL',
-        email: profile.email || '',
-        validarRFCIngresos: profile.validacionesHabilitadas?.validarRFCIngresos ?? false,
-        validarRFCGastos: profile.validacionesHabilitadas?.validarRFCGastos ?? false,
+        nombre: profile.nombre || "",
+        rfc: profile.rfc || "",
+        tipoPersona: profile.tipoPersona || "MORAL",
+        email: profile.email || "",
+        validarRFCIngresos:
+          profile.validacionesHabilitadas?.validarRFCIngresos ?? false,
+        validarRFCGastos:
+          profile.validacionesHabilitadas?.validarRFCGastos ?? false,
         validarMatchesComplementos:
           profile.validacionesHabilitadas?.validarMatchesComplementos ?? false,
       });
@@ -97,18 +104,18 @@ export function ProfileSettings() {
   }, [profile, reset]);
 
   // Detectar tipo de persona cuando cambia el RFC
-  const rfcValue = watch('rfc');
+  const rfcValue = watch("rfc");
   useEffect(() => {
     if (rfcValue && validarFormatoRFC(rfcValue)) {
       const tipo = determinarTipoPersona(rfcValue);
       if (tipo) {
         setRfcTipo(tipo);
-        setValue('tipoPersona', tipo);
+        setValue("tipoPersona", tipo);
       }
     }
   }, [rfcValue, setValue]);
 
-  const onSubmit = (data: ProfileFormData) => {
+  const onSubmit = async (data: ProfileFormData) => {
     try {
       if (profile) {
         // Actualizar perfil existente
@@ -138,12 +145,16 @@ export function ProfileSettings() {
         });
       }
 
-      setSuccessMessage('Perfil guardado correctamente');
+      // Recargar perfil desde Supabase para asegurar sincronización
+      await syncWithSupabase();
+
+      setSuccessMessage("Perfil guardado correctamente");
       setTimeout(() => {
         setSuccessMessage(null);
       }, 3000);
     } catch (error) {
-      console.error('Error al guardar perfil:', error);
+      console.error("Error al guardar perfil:", error);
+      setSuccessMessage(null);
     }
   };
 
@@ -154,7 +165,9 @@ export function ProfileSettings() {
         <div className="flex items-center justify-center py-12">
           <div className="text-center">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
-            <p className="text-gray-600">Cargando perfil desde la base de datos...</p>
+            <p className="text-gray-600">
+              Cargando perfil desde la base de datos...
+            </p>
           </div>
         </div>
       </div>
@@ -195,12 +208,14 @@ export function ProfileSettings() {
               <input
                 type="text"
                 id="nombre"
-                {...register('nombre')}
+                {...register("nombre")}
                 className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary"
                 placeholder="Ej: Empresa S.A. de C.V."
               />
               {errors.nombre && (
-                <p className="mt-1 text-sm text-red-600">{errors.nombre.message}</p>
+                <p className="mt-1 text-sm text-red-600">
+                  {errors.nombre.message}
+                </p>
               )}
             </div>
 
@@ -214,17 +229,20 @@ export function ProfileSettings() {
               <input
                 type="text"
                 id="rfc"
-                {...register('rfc')}
+                {...register("rfc")}
                 className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary uppercase"
                 placeholder="Ej: ABC123456789"
                 maxLength={13}
               />
               {errors.rfc && (
-                <p className="mt-1 text-sm text-red-600">{errors.rfc.message}</p>
+                <p className="mt-1 text-sm text-red-600">
+                  {errors.rfc.message}
+                </p>
               )}
               {rfcTipo && (
                 <p className="mt-1 text-sm text-gray-500">
-                  Tipo: {rfcTipo === 'MORAL' ? 'Persona Moral' : 'Persona Física'}
+                  Tipo:{" "}
+                  {rfcTipo === "MORAL" ? "Persona Moral" : "Persona Física"}
                 </p>
               )}
             </div>
@@ -238,7 +256,7 @@ export function ProfileSettings() {
               </label>
               <select
                 id="tipoPersona"
-                {...register('tipoPersona')}
+                {...register("tipoPersona")}
                 className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary"
                 disabled={!!rfcTipo}
               >
@@ -262,12 +280,14 @@ export function ProfileSettings() {
               <input
                 type="email"
                 id="email"
-                {...register('email')}
+                {...register("email")}
                 className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary"
                 placeholder="ejemplo@empresa.com"
               />
               {errors.email && (
-                <p className="mt-1 text-sm text-red-600">{errors.email.message}</p>
+                <p className="mt-1 text-sm text-red-600">
+                  {errors.email.message}
+                </p>
               )}
             </div>
           </div>
@@ -283,7 +303,7 @@ export function ProfileSettings() {
               <input
                 type="checkbox"
                 id="validarRFCIngresos"
-                {...register('validarRFCIngresos')}
+                {...register("validarRFCIngresos")}
                 className="mt-1"
               />
               <div className="flex-1">
@@ -294,8 +314,8 @@ export function ProfileSettings() {
                   Validar RFC en Ingresos
                 </label>
                 <p className="text-sm text-gray-600">
-                  Muestra advertencia si el RFC del emisor no coincide con tu RFC
-                  (las facturas aún se pueden cargar)
+                  Muestra advertencia si el RFC del emisor no coincide con tu
+                  RFC (las facturas aún se pueden cargar)
                 </p>
               </div>
             </div>
@@ -304,7 +324,7 @@ export function ProfileSettings() {
               <input
                 type="checkbox"
                 id="validarRFCGastos"
-                {...register('validarRFCGastos')}
+                {...register("validarRFCGastos")}
                 className="mt-1"
               />
               <div className="flex-1">
@@ -315,8 +335,8 @@ export function ProfileSettings() {
                   Validar RFC en Gastos
                 </label>
                 <p className="text-sm text-gray-600">
-                  Bloquea la carga de gastos si el RFC del receptor no coincide con
-                  tu RFC (previene errores contables)
+                  Bloquea la carga de gastos si el RFC del receptor no coincide
+                  con tu RFC (previene errores contables)
                 </p>
               </div>
             </div>
@@ -325,7 +345,7 @@ export function ProfileSettings() {
               <input
                 type="checkbox"
                 id="validarMatchesComplementos"
-                {...register('validarMatchesComplementos')}
+                {...register("validarMatchesComplementos")}
                 className="mt-1"
               />
               <div className="flex-1">
@@ -336,8 +356,9 @@ export function ProfileSettings() {
                   Validar Matches de Complementos
                 </label>
                 <p className="text-sm text-gray-600">
-                  Busca automáticamente facturas PPD relacionadas con complementos de
-                  pago y muestra advertencias si no se encuentra match
+                  Busca automáticamente facturas PPD relacionadas con
+                  complementos de pago y muestra advertencias si no se encuentra
+                  match
                 </p>
               </div>
             </div>
@@ -348,8 +369,10 @@ export function ProfileSettings() {
           <div>
             {profile && (
               <p className="text-sm text-gray-500">
-                Última actualización:{' '}
-                {new Date(profile.fechaActualizacion).toLocaleDateString('es-MX')}
+                Última actualización:{" "}
+                {new Date(profile.fechaActualizacion).toLocaleDateString(
+                  "es-MX"
+                )}
               </p>
             )}
           </div>
@@ -359,18 +382,19 @@ export function ProfileSettings() {
             className="flex items-center gap-2"
           >
             <Save className="h-4 w-4" />
-            {isSubmitting ? 'Guardando...' : 'Guardar Perfil'}
+            {isSubmitting ? "Guardando..." : "Guardar Perfil"}
           </Button>
         </div>
 
         {successMessage && (
           <div className="bg-green-50 border border-green-200 rounded-lg p-4 flex items-center gap-2">
             <CheckCircle2 className="h-5 w-5 text-green-500 shrink-0" />
-            <p className="text-green-700 text-sm font-medium">{successMessage}</p>
+            <p className="text-green-700 text-sm font-medium">
+              {successMessage}
+            </p>
           </div>
         )}
       </form>
     </div>
   );
 }
-

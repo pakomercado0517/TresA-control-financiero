@@ -23,21 +23,25 @@ function profileToDb(profile: ClienteProfile, userId: string) {
 /**
  * Convierte un registro de base de datos a ClienteProfile
  */
-function dbToProfile(row: {
-  id: string;
-  user_id: string;
-  nombre: string | null;
-  rfc: string | null;
-  tipo_persona: string | null;
-  validaciones_habilitadas: unknown;
-  created_at: string;
-  updated_at: string;
-}): ClienteProfile {
+function dbToProfile(
+  row: {
+    id: string;
+    user_id: string;
+    nombre: string | null;
+    rfc: string | null;
+    tipo_persona: string | null;
+    validaciones_habilitadas: unknown;
+    created_at: string;
+    updated_at: string;
+  },
+  email?: string | null
+): ClienteProfile {
   return {
     id: row.id,
     nombre: row.nombre || '',
     rfc: row.rfc || '',
     tipoPersona: (row.tipo_persona || 'FISICA') as ClienteProfile['tipoPersona'],
+    email: email || undefined,
     validacionesHabilitadas: ((): ValidacionesConfig => {
       const validaciones = row.validaciones_habilitadas;
       if (
@@ -85,6 +89,7 @@ export async function getProfileIdFromAuthId(authUserId: string): Promise<string
 
 /**
  * Obtiene el perfil del usuario desde Supabase
+ * Incluye el email del usuario desde auth.users usando el user_id
  */
 export async function fetchProfileFromSupabase(userId: string): Promise<ClienteProfile | null> {
   const { data, error } = await supabase
@@ -106,7 +111,20 @@ export async function fetchProfileFromSupabase(userId: string): Promise<ClienteP
     return null;
   }
 
-  return dbToProfile(data);
+  // Obtener el email del usuario desde auth.users
+  // El user_id en profiles corresponde al id en auth.users
+  let email: string | null = null;
+  try {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user && user.id === userId) {
+      email = user.email || null;
+    }
+  } catch (authError) {
+    console.warn('No se pudo obtener el email del usuario:', authError);
+    // Continuar sin email si hay error
+  }
+
+  return dbToProfile(data, email);
 }
 
 /**

@@ -135,6 +135,18 @@ export const useProfileStore = create<ProfileStore>()(
           profile: updatedProfile,
           error: null,
         });
+
+        // Sincronizar con Supabase si hay usuario autenticado
+        (async () => {
+          try {
+            const { data: { user } } = await supabase.auth.getUser();
+            if (user) {
+              await saveProfileToSupabase(updatedProfile, user.id);
+            }
+          } catch (supabaseError) {
+            console.warn('Error al sincronizar perfil con Supabase:', supabaseError);
+          }
+        })();
       },
 
       /**
@@ -160,6 +172,18 @@ export const useProfileStore = create<ProfileStore>()(
           profile: updatedProfile,
           error: null,
         });
+
+        // Sincronizar con Supabase si hay usuario autenticado
+        (async () => {
+          try {
+            const { data: { user } } = await supabase.auth.getUser();
+            if (user) {
+              await saveProfileToSupabase(updatedProfile, user.id);
+            }
+          } catch (supabaseError) {
+            console.warn('Error al sincronizar perfil con Supabase:', supabaseError);
+          }
+        })();
       },
 
       /**
