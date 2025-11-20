@@ -1,6 +1,6 @@
-# 💰 EBN Financial Reports
+# 💰 TresA Control Financiero
 
-> Sistema de gestión financiera para el control de facturas CFDI (México) con generación de reportes en PDF
+> Sistema de gestión financiera para el control de facturas CFDI (México) con generación de reportes en PDF. Desarrollado por **TresA Design**.
 
 [![Next.js](https://img.shields.io/badge/Next.js-16.0-black?style=flat-square&logo=next.js)](https://nextjs.org/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.0-blue?style=flat-square&logo=typescript)](https://www.typescriptlang.org/)
@@ -12,7 +12,9 @@
 
 ## 📋 Descripción
 
-Aplicación web MVP diseñada para el control y gestión de facturas CFDI (Comprobante Fiscal Digital por Internet) en México. El sistema permite procesar facturas XML, identificar automáticamente su tipo (PUE, PPD o Complemento de Pago), gestionar ingresos y gastos, y generar reportes financieros profesionales en formato PDF.
+Aplicación web profesional diseñada para el control y gestión de facturas CFDI (Comprobante Fiscal Digital por Internet) en México. El sistema permite procesar facturas XML, identificar automáticamente su tipo (PUE, PPD o Complemento de Pago), gestionar ingresos y gastos, y generar reportes financieros profesionales en formato PDF.
+
+**Desarrollado por [TresA Design](https://tresadesign.com)** - Productos digitales de calidad empresarial.
 
 ### 🎯 Características Principales
 
@@ -51,14 +53,25 @@ Aplicación web MVP diseñada para el control y gestión de facturas CFDI (Compr
 - **🔒 Validaciones y Seguridad**
 
   - Validación de RFC del cliente
-  - Verificación de coincidencia de RFC en facturas
+  - Verificación de coincidencia de RFC en facturas (bloquea carga si no coincide)
   - Matching de complementos de pago con facturas PPD
   - Perfil de cliente configurable
+  - Autenticación segura con Supabase Auth
 
-- **💾 Persistencia Local**
-  - Almacenamiento en IndexedDB
-  - Exportación/Importación de datos (JSON)
-  - Sin dependencia de backend
+- **☁️ Sincronización en la Nube**
+
+  - Almacenamiento en Supabase (PostgreSQL)
+  - Sincronización automática de datos
+  - Row Level Security (RLS) para protección de datos
+  - Backup automático en la nube
+  - Acceso desde múltiples dispositivos
+
+- **🔐 Autenticación y Usuarios**
+
+  - Sistema de registro e inicio de sesión
+  - Gestión de perfiles de usuario
+  - Protección de rutas con middleware
+  - Sesiones persistentes
 
 ---
 
@@ -79,7 +92,8 @@ Aplicación web MVP diseñada para el control y gestión de facturas CFDI (Compr
 ### Estado y Datos
 
 - **State Management**: [Zustand](https://zustand-demo.pmnd.rs/)
-- **Persistencia**: [idb-keyval](https://github.com/jakearchibald/idb-keyval) (IndexedDB)
+- **Base de Datos**: [Supabase](https://supabase.com) (PostgreSQL)
+- **Autenticación**: Supabase Auth
 - **Parser XML**: [fast-xml-parser](https://github.com/NaturalIntelligence/fast-xml-parser)
 
 ### Utilidades
@@ -103,6 +117,7 @@ Aplicación web MVP diseñada para el control y gestión de facturas CFDI (Compr
 
 - Node.js 18+
 - pnpm (recomendado) o npm/yarn
+- Cuenta en [Supabase](https://supabase.com) (gratuita)
 
 ### Pasos
 
@@ -119,13 +134,32 @@ Aplicación web MVP diseñada para el control y gestión de facturas CFDI (Compr
    pnpm install
    ```
 
-3. **Ejecutar en desarrollo**
+3. **Configurar variables de entorno**
+
+   Crea un archivo `.env.local` en la raíz del proyecto:
+
+   ```env
+   NEXT_PUBLIC_SUPABASE_URL=tu_url_de_supabase
+   NEXT_PUBLIC_SUPABASE_ANON_KEY=tu_anon_key_de_supabase
+   ```
+
+4. **Configurar base de datos en Supabase**
+
+   - Ve a tu proyecto en [Supabase Dashboard](https://app.supabase.com)
+   - Abre el **SQL Editor**
+   - Ejecuta el archivo `supabase/schema.sql` completo
+   - Verifica que se crearon las tablas: `invoices`, `expenses`, `profiles`
+   - Verifica que existe la función: `create_or_update_profile`
+
+   📖 **Guía detallada**: Ver [docs/CONFIGURAR_SUPABASE.md](../docs/CONFIGURAR_SUPABASE.md)
+
+5. **Ejecutar en desarrollo**
 
    ```bash
    pnpm dev
    ```
 
-4. **Abrir en el navegador**
+6. **Abrir en el navegador**
    ```
    http://localhost:3000
    ```
@@ -183,10 +217,26 @@ Antes de cargar facturas, configura tu perfil de cliente:
 4. Explora las tablas de facturas y gastos
 5. Exporta el reporte a PDF si lo necesitas
 
-### 5. Exportar/Importar Datos
+### 5. Autenticación
 
-- **Exportar**: Navegación → "Exportar Datos" (descarga JSON)
-- **Importar**: Navegación → "Importar Datos" (carga JSON)
+1. **Registro de Usuario**
+   - Ve a **Inicio** (`/`)
+   - Haz clic en "Registrarse"
+   - Completa el formulario con tus datos
+   - Confirma tu email (si está habilitado en Supabase)
+   - Tu perfil se creará automáticamente
+
+2. **Inicio de Sesión**
+   - Ve a **Inicio** (`/`)
+   - Ingresa tu email y contraseña
+   - Accede a todas las funcionalidades
+
+### 6. Exportar/Importar Datos
+
+- **Exportar**: Navegación → "Exportar Datos" (descarga JSON) - *Próximamente*
+- **Importar**: Navegación → "Importar Datos" (carga JSON) - *Próximamente*
+
+> **Nota**: Los datos se sincronizan automáticamente con Supabase. No necesitas exportar/importar manualmente.
 
 ---
 
@@ -220,6 +270,7 @@ finance-reports/
 │   ├── types/                 # Tipos TypeScript centralizados
 │   │   ├── cfdi.types.ts
 │   │   ├── expense.types.ts
+│   │   ├── profile.types.ts
 │   │   ├── report.types.ts
 │   │   └── index.ts
 │   ├── xml-parser/            # Parser CFDI
@@ -230,11 +281,21 @@ finance-reports/
 │   │   ├── report-calculator.ts
 │   │   ├── invoice-validator.ts
 │   │   ├── expense-validator.ts
+│   │   ├── rfc-validator.ts
 │   │   └── data-export.ts
-│   ├── storage/               # Persistencia
-│   │   └── idb-storage.ts
+│   ├── supabase/              # Integración con Supabase
+│   │   ├── client.ts          # Cliente del navegador
+│   │   ├── server.ts          # Cliente del servidor
+│   │   ├── auth-context.tsx   # Contexto de autenticación
+│   │   ├── profiles.ts        # Gestión de perfiles
+│   │   ├── invoices.ts        # Gestión de facturas
+│   │   └── expenses.ts        # Gestión de gastos
 │   └── hooks/                 # Custom hooks
 │       └── use-profile-guard.ts
+├── supabase/                  # Scripts SQL de Supabase
+│   ├── schema.sql             # Esquema completo de BD
+│   ├── fix-foreign-keys.sql   # Corrección de foreign keys
+│   └── fix-profiles-constraint.sql
 │
 ├── store/                     # Stores Zustand
 │   ├── invoice-store.ts       # Facturas de ingreso
@@ -275,23 +336,39 @@ finance-reports/
 - ✅ Validación de formato XML CFDI 4.0
 - ✅ Prevención de duplicados por UUID
 
-### Persistencia
+### Base de Datos y Persistencia
 
-- **IndexedDB**: Almacenamiento local del navegador
-- **Exportación JSON**: Backup completo de datos
-- **Importación JSON**: Restauración de datos
+- **Supabase PostgreSQL**: Base de datos principal en la nube
+  - Tabla `profiles`: Perfiles de usuario
+  - Tabla `invoices`: Facturas de ingreso
+  - Tabla `expenses`: Gastos y compras
+  - Row Level Security (RLS): Cada usuario solo ve sus datos
+  - Función RPC: `create_or_update_profile` para gestión de perfiles
+
+- **Autenticación Supabase**:
+  - Registro e inicio de sesión
+  - Gestión de sesiones
+  - Confirmación de email (opcional)
+  - Recuperación de contraseña
+
+- **Sincronización Automática**:
+  - Los datos se guardan automáticamente en Supabase
+  - Sincronización en tiempo real
+  - Acceso desde múltiples dispositivos
 
 ---
 
-## 🎨 Diseño
+## 🎨 Diseño y Branding
 
-La aplicación utiliza un diseño moderno, minimalista y semi-elegante:
+La aplicación utiliza un diseño corporativo y sofisticado:
 
-- **Paleta de colores**: Neutral con acentos sutiles
+- **Paleta de colores**: Negro, blanco y azul cobalto (#0047AB)
 - **Tipografía**: Geist (optimizada por Next.js)
 - **Componentes**: Shadcn/ui para consistencia
 - **Responsive**: Diseño adaptable a diferentes tamaños de pantalla
 - **Accesibilidad**: Componentes accesibles por defecto
+- **PWA**: Progressive Web App instalable
+- **Branding**: Desarrollado por **TresA Design**
 
 ---
 
@@ -316,7 +393,8 @@ La aplicación utiliza un diseño moderno, minimalista y semi-elegante:
 
 ## 🚧 Estado del Proyecto
 
-**Versión**: MVP (0.1.0)
+**Versión**: 0.1.0  
+**Desarrollado por**: [TresA Design](https://tresadesign.com)
 
 ### ✅ Implementado
 
@@ -326,33 +404,73 @@ La aplicación utiliza un diseño moderno, minimalista y semi-elegante:
 - [x] Gestión de gastos (XML + manual)
 - [x] Dashboard con métricas
 - [x] Generación de reportes PDF
-- [x] Validación de RFC
+- [x] Validación de RFC (bloquea carga si no coincide)
 - [x] Matching de complementos de pago
-- [x] Persistencia en IndexedDB
-- [x] Exportación/Importación de datos
+- [x] **Autenticación de usuarios (Supabase Auth)**
+- [x] **Sincronización en la nube (Supabase)**
+- [x] **Base de datos PostgreSQL con RLS**
 - [x] Perfil de cliente
+- [x] Búsqueda y filtros avanzados
+- [x] Paginación de resultados
+- [x] Ordenamiento por columnas
+- [x] PWA (Progressive Web App)
+- [x] Branding corporativo TresA Design
 
 ### 🔮 Futuras Mejoras
 
-- [ ] Autenticación de usuarios
-- [ ] Sincronización en la nube
-- [ ] Múltiples perfiles de cliente
+- [ ] Exportación/Importación de datos (JSON)
+- [ ] Múltiples perfiles de cliente por usuario
 - [ ] Análisis y gráficas avanzadas
 - [ ] Notificaciones de pagos pendientes
 - [ ] Integración con APIs fiscales
+- [ ] Almacenamiento de archivos XML en Supabase Storage
+- [ ] Reportes programados por email
+
+---
+
+## 🔧 Configuración de Supabase
+
+### Requisitos
+
+1. **Crear proyecto en Supabase**
+   - Ve a [supabase.com](https://supabase.com)
+   - Crea un nuevo proyecto
+   - Obtén tu `URL` y `anon key`
+
+2. **Ejecutar esquema SQL**
+   - Abre el SQL Editor en Supabase
+   - Ejecuta el archivo `supabase/schema.sql`
+   - Verifica que se crearon las tablas y funciones
+
+3. **Configurar variables de entorno**
+   ```env
+   NEXT_PUBLIC_SUPABASE_URL=tu_url
+   NEXT_PUBLIC_SUPABASE_ANON_KEY=tu_key
+   ```
+
+📖 **Guía completa**: Ver [docs/CONFIGURAR_SUPABASE.md](../docs/CONFIGURAR_SUPABASE.md)
+
+### Estructura de Base de Datos
+
+- **`profiles`**: Perfiles de usuario (RFC, nombre, validaciones)
+- **`invoices`**: Facturas de ingreso (CFDI)
+- **`expenses`**: Gastos y compras (XML y manuales)
+- **RLS Policies**: Cada usuario solo accede a sus propios datos
+- **Función RPC**: `create_or_update_profile` para gestión de perfiles
 
 ---
 
 ## 📄 Licencia
 
-Este proyecto es privado y de uso interno.
+Este proyecto es propiedad de **TresA Design**. Todos los derechos reservados.
 
 ---
 
-## 👥 Contribución
+## 👥 Soporte
 
-Este es un proyecto MVP en desarrollo activo. Para contribuciones, contacta al equipo de desarrollo.
+Para soporte técnico o consultas sobre el producto, contacta a **TresA Design**.
 
 ---
 
-**Desarrollado con ❤️ usando Next.js y TypeScript**
+**Desarrollado con ❤️ por [TresA Design](https://tresadesign.com)**  
+**Tecnologías**: Next.js 16, TypeScript, React 19, Supabase, Tailwind CSS 4
