@@ -76,8 +76,8 @@ export function Navigation() {
             href="/"
             className="text-lg md:text-xl font-bold text-gray-900 whitespace-nowrap shrink-0"
           >
-            <span className="hidden sm:inline">EBN Financial Reports</span>
-            <span className="sm:hidden">EBN</span>
+            <span className="hidden sm:inline">TresA Control Financiero</span>
+            <span className="sm:hidden">TresA</span>
           </Link>
 
           {/* Navegación centrada */}

@@ -2,13 +2,13 @@ import type { MetadataRoute } from 'next';
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: 'EBN Financial Reports',
-    short_name: 'EBN FR',
-    description: 'Sistema de control de gastos mediante procesamiento de facturas XML (CFDI México)',
+    name: 'TresA Control Financiero',
+    short_name: 'TresA Control',
+    description: 'Sistema de control financiero mediante procesamiento de facturas XML (CFDI México). Controla tus ingresos y gastos de forma simple y profesional.',
     start_url: '/',
     display: 'standalone',
     background_color: '#ffffff',
-    theme_color: '#3b82f6',
+    theme_color: '#0047AB', // Azul cobalto corporativo
     orientation: 'portrait-primary',
     icons: [
       {

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { Navigation } from "./components/navigation";
+import { Footer } from "./components/footer";
 import { Toaster } from "sonner";
 import { ServiceWorkerRegister } from "./components/service-worker-register";
 import { AuthProvider } from "@/lib/supabase/auth-context";
@@ -18,13 +19,13 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "EBN Financial Reports",
+  title: "TresA Control Financiero",
   description:
-    "Sistema de control de gastos mediante procesamiento de facturas XML (CFDI México)",
+    "Sistema de control financiero mediante procesamiento de facturas XML (CFDI México). Controla tus ingresos y gastos de forma simple y profesional.",
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
-    title: "EBN FR",
+    title: "TresA Control",
   },
   icons: {
     icon: [
@@ -43,7 +44,7 @@ export const metadata: Metadata = {
 
 export function generateViewport() {
   return {
-    themeColor: "#3b82f6",
+    themeColor: "#0047AB", // Azul cobalto corporativo
   };
 }
 
@@ -62,6 +63,7 @@ export default function RootLayout({
           <ServiceWorkerRegister />
           <Navigation />
           <main className="min-h-screen bg-gray-50">{children}</main>
+          <Footer />
           <Toaster position="top-right" richColors />
         </AuthProvider>
       </body>
