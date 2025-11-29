@@ -86,6 +86,48 @@ function dbToGasto(row: {
   validacion: unknown;
 }): Gasto {
   if (row.tipo_origen === 'XML' && row.uuid) {
+    // Parsear pagos y convertir fechas
+    let pagos = undefined;
+    if (row.pagos) {
+      const pagosParsed = typeof row.pagos === 'string' ? JSON.parse(row.pagos) : row.pagos;
+      if (Array.isArray(pagosParsed)) {
+        pagos = pagosParsed.map((pago: any) => ({
+          ...pago,
+          fechaPago: pago.fechaPago ? new Date(pago.fechaPago) : new Date(),
+        }));
+      }
+    }
+
+    // Parsear complemento de pago y convertir fecha
+    let complementoPago = undefined;
+    if (row.complemento_pago) {
+      const complementoParsed = typeof row.complemento_pago === 'string'
+        ? JSON.parse(row.complemento_pago)
+        : row.complemento_pago;
+      if (complementoParsed) {
+        complementoPago = {
+          ...complementoParsed,
+          fechaPago: complementoParsed.fechaPago ? new Date(complementoParsed.fechaPago) : new Date(),
+        };
+      }
+    }
+
+    // Parsear validación y convertir fecha si existe
+    let validacion = undefined;
+    if (row.validacion) {
+      const validacionParsed = typeof row.validacion === 'string'
+        ? JSON.parse(row.validacion)
+        : row.validacion;
+      if (validacionParsed) {
+        validacion = {
+          ...validacionParsed,
+          fechaValidacion: validacionParsed.fechaValidacion
+            ? new Date(validacionParsed.fechaValidacion)
+            : undefined,
+        };
+      }
+    }
+
     return {
       id: row.id,
       uuid: row.uuid,
@@ -101,17 +143,9 @@ function dbToGasto(row: {
       nombreReceptor: row.nombre_receptor || '',
       concepto: row.concepto || '',
       tipo: (row.tipo || 'PUE') as GastoXML['tipo'],
-      pagos: row.pagos ? (typeof row.pagos === 'string' ? JSON.parse(row.pagos) : row.pagos) : undefined,
-      complementoPago: row.complemento_pago
-        ? typeof row.complemento_pago === 'string'
-          ? JSON.parse(row.complemento_pago)
-          : row.complemento_pago
-        : undefined,
-      validacion: row.validacion
-        ? typeof row.validacion === 'string'
-          ? JSON.parse(row.validacion)
-          : row.validacion
-        : undefined,
+      pagos,
+      complementoPago,
+      validacion,
       tipoOrigen: 'XML',
     } as GastoXML;
   } else {
