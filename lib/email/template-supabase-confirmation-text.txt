@@ -1,0 +1,19 @@
+TresA Control Financiero
+========================
+
+Confirma tu cuenta
+
+¡Gracias por registrarte en TresA Control Financiero!
+
+Para completar tu registro y comenzar a usar nuestro sistema de control financiero, por favor confirma tu dirección de correo electrónico visitando el siguiente enlace:
+
+{{ .ConfirmationURL }}
+
+Nota de seguridad: Si no solicitaste esta cuenta, puedes ignorar este correo. El enlace de confirmación expirará en 24 horas.
+
+---
+TresA Control Financiero
+Sistema de control financiero mediante procesamiento de facturas XML (CFDI México)
+
+Este es un correo automático, por favor no respondas a este mensaje.
+
