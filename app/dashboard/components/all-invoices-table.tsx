@@ -1,13 +1,38 @@
 'use client';
 
-import type { CFDI } from '@/lib/types';
-import { FileText, AlertCircle, CheckCircle2 } from 'lucide-react';
+import { useState, useMemo, useRef, useEffect } from 'react';
+import type { AllInvoicesTableProps } from '@/lib/types';
+import { calculatePaginationState } from '@/lib/types';
+import { AlertCircle, CheckCircle2 } from 'lucide-react';
+import { Pagination } from '@/components/ui/pagination';
 
-interface AllInvoicesTableProps {
-  facturas: CFDI[];
-}
+const PAGE_SIZE = 6;
 
 export function AllInvoicesTable({ facturas }: AllInvoicesTableProps) {
+  const [currentPage, setCurrentPage] = useState(1);
+  const previousFacturasLengthRef = useRef(facturas.length);
+
+  // Resetear a la primera página cuando cambian las facturas
+  useEffect(() => {
+    if (previousFacturasLengthRef.current !== facturas.length) {
+      previousFacturasLengthRef.current = facturas.length;
+      setCurrentPage(1);
+    }
+  }, [facturas.length]);
+
+  // Calcular paginación
+  const pagination = useMemo(
+    () => calculatePaginationState(currentPage, PAGE_SIZE, facturas.length),
+    [currentPage, facturas.length]
+  );
+
+  // Obtener facturas de la página actual
+  const paginatedFacturas = useMemo(() => {
+    const startIndex = (currentPage - 1) * PAGE_SIZE;
+    const endIndex = startIndex + PAGE_SIZE;
+    return facturas.slice(startIndex, endIndex);
+  }, [facturas, currentPage]);
+
   if (facturas.length === 0) {
     return null;
   }
@@ -19,44 +44,44 @@ export function AllInvoicesTable({ facturas }: AllInvoicesTableProps) {
   };
 
   return (
-    <div className="bg-white border border-gray-200 rounded-lg overflow-hidden mb-6">
-      <div className="px-6 py-4 border-b border-gray-200">
-        <h2 className="text-xl font-bold text-gray-900">
+    <div className="bg-white border-2 border-blue-300 rounded-lg overflow-hidden mb-6">
+      <div className="px-6 py-4 border-b-2 border-blue-200 bg-blue-50">
+        <h2 className="text-xl font-bold text-blue-900">
           Todas las Facturas ({facturas.length})
         </h2>
-        <p className="text-sm text-gray-600 mt-1">
+        <p className="text-sm text-blue-700 mt-1">
           Facturas, complementos de pago y documentos relacionados del período seleccionado
         </p>
       </div>
       <div className="overflow-x-auto">
         <table className="w-full">
-          <thead className="bg-gray-50">
+          <thead className="bg-blue-100">
             <tr>
-              <th className="text-left px-6 py-3 text-sm font-semibold text-gray-700">
+              <th className="text-left px-6 py-3 text-sm font-semibold text-blue-900">
                 UUID
               </th>
-              <th className="text-left px-6 py-3 text-sm font-semibold text-gray-700">
+              <th className="text-left px-6 py-3 text-sm font-semibold text-blue-900">
                 Fecha
               </th>
-              <th className="text-left px-6 py-3 text-sm font-semibold text-gray-700">
+              <th className="text-left px-6 py-3 text-sm font-semibold text-blue-900">
                 Tipo
               </th>
-              <th className="text-right px-6 py-3 text-sm font-semibold text-gray-700">
+              <th className="text-right px-6 py-3 text-sm font-semibold text-blue-900">
                 Total
               </th>
-              <th className="text-left px-6 py-3 text-sm font-semibold text-gray-700">
+              <th className="text-left px-6 py-3 text-sm font-semibold text-blue-900">
                 Emisor
               </th>
-              <th className="text-left px-6 py-3 text-sm font-semibold text-gray-700">
+              <th className="text-left px-6 py-3 text-sm font-semibold text-blue-900">
                 Receptor
               </th>
-              <th className="text-left px-6 py-3 text-sm font-semibold text-gray-700">
+              <th className="text-left px-6 py-3 text-sm font-semibold text-blue-900">
                 Validación
               </th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-gray-200">
-            {facturas.map((factura) => {
+          <tbody className="divide-y divide-blue-100">
+            {paginatedFacturas.map((factura) => {
               // Para complementos de pago, mostrar información adicional
               const esComplemento = factura.tipo === 'COMPLEMENTO_PAGO';
               const uuidRelacionado = factura.complementoPago?.uuidRelacionado;
@@ -64,7 +89,7 @@ export function AllInvoicesTable({ facturas }: AllInvoicesTableProps) {
               return (
                 <tr
                   key={factura.uuid}
-                  className="hover:bg-gray-50 transition-colors"
+                  className="hover:bg-blue-50 transition-colors"
                 >
                   <td className="px-6 py-4">
                     <p className="font-mono text-xs text-gray-600">
@@ -151,6 +176,7 @@ export function AllInvoicesTable({ facturas }: AllInvoicesTableProps) {
           </tbody>
         </table>
       </div>
+      <Pagination pagination={pagination} onPageChange={setCurrentPage} />
     </div>
   );
 }

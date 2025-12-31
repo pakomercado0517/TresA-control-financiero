@@ -2,9 +2,10 @@
 
 import { useState, useEffect } from 'react';
 import { MESES } from '@/lib/types';
+import type { DashboardFilters } from '@/lib/types';
 
 interface DashboardFiltersProps {
-  onFilterChange: (mes: number, año: number) => void;
+  onFilterChange: (filters: DashboardFilters) => void;
   defaultMes?: number;
   defaultAño?: number;
 }
@@ -22,7 +23,7 @@ export function DashboardFilters({
   );
 
   useEffect(() => {
-    onFilterChange(mes, año);
+    onFilterChange({ mes, año });
   }, [mes, año, onFilterChange]);
 
   const handleMesChange = (value: string) => {
