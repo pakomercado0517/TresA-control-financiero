@@ -20,6 +20,7 @@ import type {
   Reporte,
   DashboardFilters as DashboardFiltersType,
 } from "@/lib/types";
+import { DashboardFilters } from "./DashboardFilters";
 
 export function DashboardView() {
   const { invoices } = useInvoiceStore();
@@ -122,169 +123,20 @@ export function DashboardView() {
         </div>
 
         {/* Filtros y Búsqueda unificados (versión sin datos) */}
-        <div className="mb-6 bg-linear-to-r from-blue-50 via-indigo-50 to-purple-50 border-2 border-blue-300 rounded-xl p-4 shadow-xl hover:shadow-2xl transition-shadow duration-300">
-          <div className="flex items-center gap-2 mb-3">
-            <div className="bg-linear-to-br from-blue-600 to-indigo-600 p-2 rounded-lg shadow-lg transform hover:scale-105 transition-transform duration-200">
-              <Search className="h-4 w-4 text-white" />
-            </div>
-            <div>
-              <h3 className="text-lg font-bold text-gray-900 flex items-center gap-2">
-                🔍 Filtros y Búsqueda
-              </h3>
-              <p className="text-xs text-gray-600 mt-0.5">
-                Selecciona el período y busca por UUID, RFC, nombre o concepto
-              </p>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-            {/* Filtro de Mes */}
-            <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-gray-700 flex items-center gap-1.5">
-                <span className="text-sm">📅</span>
-                Mes
-              </label>
-
-              {/* CONTENEDOR CON ALTURA FIJA */}
-              <div className="relative h-10 group">
-                <select
-                  value={mes}
-                  onChange={(e) => {
-                    const newMes = parseInt(e.target.value, 10);
-                    setMes(newMes);
-                    handleFilterChange({ mes: newMes, año });
-                  }}
-                  className="w-full h-full text-sm border-2 border-blue-300
-                 focus:border-blue-500 focus:ring-3 focus:ring-blue-200
-                 bg-white shadow-md hover:shadow-lg transition-all duration-200
-                 rounded-md px-3 pr-10 appearance-none cursor-pointer"
-                >
-                  {MESES.map((mesNombre, index) => (
-                    <option key={index} value={index + 1}>
-                      {mesNombre}
-                    </option>
-                  ))}
-                </select>
-
-                {/* FLECHA */}
-                <svg
-                  className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4
-                 text-blue-600 group-focus-within:text-blue-700 transition-colors"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M19 9l-7 7-7-7"
-                  />
-                </svg>
-              </div>
-            </div>
-            <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-gray-700 flex items-center gap-1.5">
-                <span className="text-sm">📅</span>
-                Mes
-              </label>
-
-              {/* CONTENEDOR CON ALTURA FIJA */}
-              <div className="relative h-10 group">
-                <select
-                  value={mes}
-                  onChange={(e) => {
-                    const newMes = parseInt(e.target.value, 10);
-                    setMes(newMes);
-                    handleFilterChange({ mes: newMes, año });
-                  }}
-                  className="w-full h-full text-sm border-2 border-blue-300
-                focus:border-blue-500 focus:ring-3 focus:ring-blue-200
-                bg-white shadow-md hover:shadow-lg transition-all duration-200
-                rounded-md px-3 pr-10 appearance-none cursor-pointer"
-                >
-                  {MESES.map((mesNombre, index) => (
-                    <option key={index} value={index + 1}>
-                      {mesNombre}
-                    </option>
-                  ))}
-                </select>
-
-                {/* FLECHA */}
-                <svg
-                  className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4
-                text-blue-600 group-focus-within:text-blue-700 transition-colors"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M19 9l-7 7-7-7"
-                  />
-                </svg>
-              </div>
-            </div>
-            ``
-            {/* Filtro de Año */}
-            <div className="relative group">
-              <label className="text-xs font-semibold text-gray-700 mb-1.5 flex items-center gap-1.5">
-                <span className="text-sm">📆</span>
-                Año
-              </label>
-              <Input
-                type="number"
-                value={año}
-                onChange={(e) => {
-                  const newAño = parseInt(e.target.value, 10);
-                  setAño(newAño);
-                  handleFilterChange({ mes, año: newAño });
-                }}
-                min="2020"
-                max="2030"
-                className="h-10 text-sm border-2 border-blue-300 focus:border-blue-500 focus:ring-3 focus:ring-blue-200 bg-white shadow-md hover:shadow-lg transition-all duration-200"
-              />
-            </div>
-            {/* Campo de Búsqueda */}
-            <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-gray-700 flex items-center gap-1.5">
-                <span className="text-sm">🔎</span>
-                Búsqueda
-              </label>
-
-              <div className="relative group">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-blue-600 group-focus-within:text-blue-700 transition-colors" />
-
-                <Input
-                  type="text"
-                  placeholder="UUID, RFC, nombre, concepto..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10 pr-3 h-10 text-sm border-2 border-blue-300
-                focus:border-blue-500 focus:ring-3 focus:ring-blue-200
-                bg-white shadow-md hover:shadow-lg transition-all duration-200"
-                />
-              </div>
-            </div>
-          </div>
-
-          {/* Indicadores de estado */}
-          <div className="mt-3 flex flex-wrap items-center gap-2 text-xs">
-            {!searchTerm && (
-              <div className="flex items-center gap-2 text-gray-500">
-                <span className="bg-white/60 px-2 py-1 rounded border border-gray-200 text-xs">
-                  💡 Tip: Usa los filtros y búsqueda para encontrar información
-                  rápidamente
-                </span>
-              </div>
-            )}
-            <div className="ml-auto text-xs text-gray-500">
-              Período: {MESES[mes - 1]} {año}
-            </div>
-          </div>
-        </div>
+        <DashboardFilters
+          mes={mes}
+          año={año}
+          searchTerm={searchTerm}
+          onMesChange={(m) => {
+            setMes(m);
+            handleFilterChange({ mes: m, año });
+          }}
+          onAñoChange={(a) => {
+            setAño(a);
+            handleFilterChange({ mes, año: a });
+          }}
+          onSearchChange={setSearchTerm}
+        />
 
         <div className="bg-white border border-gray-200 rounded-lg p-12 text-center">
           <p className="text-gray-600 text-lg">
@@ -308,7 +160,7 @@ export function DashboardView() {
             Visualiza tus métricas financieras y gestiona tus facturas
           </p>
         </div>
-        <div className="flex-shrink-0">
+        <div className="shrink-0">
           <ExportPDFButton
             reporte={reporte}
             invoices={invoices}
@@ -318,124 +170,20 @@ export function DashboardView() {
       </div>
 
       {/* Filtros y Búsqueda unificados */}
-      <div className="mb-6 bg-gradient-to-r from-blue-50 via-indigo-50 to-purple-50 border-2 border-blue-300 rounded-xl p-4 shadow-xl hover:shadow-2xl transition-shadow duration-300">
-        <div className="flex items-center gap-2 mb-3">
-          <div className="bg-gradient-to-br from-blue-600 to-indigo-600 p-2 rounded-lg shadow-lg transform hover:scale-105 transition-transform duration-200">
-            <Search className="h-4 w-4 text-white" />
-          </div>
-          <div>
-            <h3 className="text-lg font-bold text-gray-900 flex items-center gap-2">
-              🔍 Filtros y Búsqueda
-            </h3>
-            <p className="text-xs text-gray-600 mt-0.5">
-              Selecciona el período y busca por UUID, RFC, nombre o concepto
-            </p>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-          {/* Filtro de Mes */}
-          <div className="relative group">
-            <label className="block text-xs font-semibold text-gray-700 mb-1.5 flex items-center gap-1.5">
-              <span className="text-sm">📅</span>
-              Mes
-            </label>
-            <select
-              value={mes}
-              onChange={(e) => {
-                const newMes = parseInt(e.target.value, 10);
-                setMes(newMes);
-                handleFilterChange({ mes: newMes, año });
-              }}
-              className="w-full h-10 text-sm border-2 border-blue-300 focus:border-blue-500 focus:ring-3 focus:ring-blue-200 bg-white shadow-md hover:shadow-lg transition-all duration-200 rounded-md px-3 appearance-none cursor-pointer"
-            >
-              {MESES.map((mesNombre, index) => (
-                <option key={index} value={index + 1}>
-                  {mesNombre}
-                </option>
-              ))}
-            </select>
-            <div className="absolute right-3 top-[calc(1.5rem+0.375rem+1.25rem)] -translate-y-1/2 pointer-events-none">
-              <svg
-                className="h-4 w-4 text-blue-600"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M19 9l-7 7-7-7"
-                />
-              </svg>
-            </div>
-          </div>
-
-          {/* Filtro de Año */}
-          <div className="relative group">
-            <label className="block text-xs font-semibold text-gray-700 mb-1.5 flex items-center gap-1.5">
-              <span className="text-sm">📆</span>
-              Año
-            </label>
-            <Input
-              type="number"
-              value={año}
-              onChange={(e) => {
-                const newAño = parseInt(e.target.value, 10);
-                setAño(newAño);
-                handleFilterChange({ mes, año: newAño });
-              }}
-              min="2020"
-              max="2030"
-              className="h-10 text-sm border-2 border-blue-300 focus:border-blue-500 focus:ring-3 focus:ring-blue-200 bg-white shadow-md hover:shadow-lg transition-all duration-200"
-            />
-          </div>
-
-          {/* Campo de Búsqueda */}
-          <div className="relative group">
-            <label className="block text-xs font-semibold text-gray-700 mb-1.5 flex items-center gap-1.5">
-              <span className="text-sm">🔎</span>
-              Búsqueda
-            </label>
-            <Search className="absolute left-3 top-[calc(1.5rem+0.375rem+1.25rem)] -translate-y-1/2 h-4 w-4 text-blue-600 group-focus-within:text-blue-700 transition-colors" />
-            <Input
-              type="text"
-              placeholder="UUID, RFC, nombre, concepto..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10 pr-3 h-10 text-sm border-2 border-blue-300 focus:border-blue-500 focus:ring-3 focus:ring-blue-200 bg-white shadow-md hover:shadow-lg transition-all duration-200"
-            />
-          </div>
-        </div>
-
-        {/* Indicadores de estado */}
-        <div className="mt-3 flex flex-wrap items-center gap-2 text-xs">
-          {searchTerm && (
-            <div className="flex items-center gap-1.5 text-blue-700">
-              <span className="font-semibold">Buscando:</span>
-              <span className="bg-blue-100 px-2 py-1 rounded-md font-mono text-xs border border-blue-200">
-                &quot;{searchTerm}&quot;
-              </span>
-              <span className="text-xs text-gray-500">
-                ({searchSummary?.totalResults || 0} resultado
-                {searchSummary?.totalResults !== 1 ? "s" : ""})
-              </span>
-            </div>
-          )}
-          {!searchTerm && (
-            <div className="flex items-center gap-2 text-gray-500">
-              <span className="bg-white/60 px-2 py-1 rounded border border-gray-200 text-xs">
-                💡 Tip: Usa los filtros y búsqueda para encontrar información
-                rápidamente
-              </span>
-            </div>
-          )}
-          <div className="ml-auto text-xs text-gray-500">
-            Período: {MESES[mes - 1]} {año}
-          </div>
-        </div>
-      </div>
+      <DashboardFilters
+        mes={mes}
+        año={año}
+        searchTerm={searchTerm}
+        onMesChange={(m) => {
+          setMes(m);
+          handleFilterChange({ mes: m, año });
+        }}
+        onAñoChange={(a) => {
+          setAño(a);
+          handleFilterChange({ mes, año: a });
+        }}
+        onSearchChange={setSearchTerm}
+      />
 
       {/* Resumen de búsqueda */}
       {searchSummary && (
