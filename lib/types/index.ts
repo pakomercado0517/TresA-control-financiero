@@ -57,6 +57,30 @@ export type {
   AppConfig,
 } from './common.types';
 
+// Tipos del Dashboard
+export type {
+  DashboardFilters,
+  PaginationConfig,
+  PaginationOptions,
+  PaginationState,
+  SortDirection,
+  InvoiceSortField,
+  InvoiceSortConfig,
+  TableDisplayConfig,
+  BaseInvoiceTableProps,
+  AllInvoicesTableProps,
+  PendingInvoicesTableProps,
+  PendingInvoiceCalculatedData,
+  DashboardMetrics,
+  DashboardState,
+  DashboardInitialConfig,
+  DashboardCallbacks,
+  TableSummaryInfo,
+} from './dashboard.types';
+
+// Funciones de utilidad
+export { calculatePaginationState } from './dashboard.types';
+
 // Constantes
 export { MESES } from './common.types';
 
