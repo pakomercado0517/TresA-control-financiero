@@ -78,9 +78,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               .from('profiles')
               .select('id')
               .eq('user_id', session.user.id)
-              .single();
+              .limit(1);
 
-            if (profileError && profileError.code === 'PGRST116') {
+            if (profileError) {
+              console.warn('Error al verificar perfil:', profileError);
+              // Continuar con creación de perfil si hay error
+            }
+
+            if (!profileData || profileData.length === 0) {
               // No existe el perfil, intentar crearlo con datos mínimos
               // Esto puede pasar si el registro falló al crear el perfil inicialmente
               console.log('Perfil no encontrado para usuario autenticado, creando perfil básico...');
