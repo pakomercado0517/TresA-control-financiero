@@ -67,47 +67,49 @@ function dbToProfile(
 /**
  * Obtiene el ID del perfil (profiles.id) dado el ID de autenticación (auth.uid)
  * Útil para obtener el profiles.id que se usa como foreign key en invoices y expenses
+ * 
+ * Nota: En Fase 1, retorna el primer perfil encontrado para mantener compatibilidad.
+ * En Fase 2, esto se actualizará para manejar múltiples perfiles.
  */
 export async function getProfileIdFromAuthId(authUserId: string): Promise<string | null> {
   const { data, error } = await supabase
     .from('profiles')
     .select('id')
     .eq('user_id', authUserId)
-    .single();
+    .limit(1);
 
   if (error) {
-    if (error.code === 'PGRST116') {
-      // No se encontró el perfil
-      return null;
-    }
     console.error('Error al obtener profile ID de Supabase:', error);
     throw error;
   }
 
-  return data?.id || null;
+  if (!data || data.length === 0) {
+    return null;
+  }
+
+  return data[0]?.id || null;
 }
 
 /**
  * Obtiene el perfil del usuario desde Supabase
  * Incluye el email del usuario desde auth.users usando el user_id
+ * 
+ * Nota: En Fase 1, retorna el primer perfil encontrado para mantener compatibilidad.
+ * En Fase 2, esto se actualizará para manejar múltiples perfiles con selector activo.
  */
 export async function fetchProfileFromSupabase(userId: string): Promise<ClienteProfile | null> {
   const { data, error } = await supabase
     .from('profiles')
     .select('*')
     .eq('user_id', userId)
-    .single();
+    .limit(1);
 
   if (error) {
-    if (error.code === 'PGRST116') {
-      // No se encontró el perfil
-      return null;
-    }
     console.error('Error al obtener perfil de Supabase:', error);
     throw error;
   }
 
-  if (!data) {
+  if (!data || data.length === 0) {
     return null;
   }
 
@@ -124,7 +126,8 @@ export async function fetchProfileFromSupabase(userId: string): Promise<ClienteP
     // Continuar sin email si hay error
   }
 
-  return dbToProfile(data, email);
+  // Tomar el primer perfil (compatible con estado actual: 1 perfil por usuario)
+  return dbToProfile(data[0], email);
 }
 
 /**
