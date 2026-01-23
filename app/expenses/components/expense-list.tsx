@@ -1,25 +1,39 @@
-'use client';
+"use client";
 
-import { useState, useMemo } from 'react';
-import { useExpenseStore } from '@/store/expense-store';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Trash2, FileText, FileX, CheckCircle2, AlertTriangle, Info, Search, X, ChevronUp, ChevronDown } from 'lucide-react';
-import type { Gasto, GastoXML, GastoManual } from '@/lib/types';
-import { MESES } from '@/lib/types';
+import { useState, useMemo } from "react";
+import { useExpenseStore } from "@/store/expense-store";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import {
+  Trash2,
+  FileText,
+  FileX,
+  CheckCircle2,
+  AlertTriangle,
+  Info,
+  Search,
+  X,
+  ChevronUp,
+  ChevronDown,
+} from "lucide-react";
+import type { Gasto, GastoXML, GastoManual } from "@/lib/types";
+import { MESES } from "@/lib/types";
 
-type SortField = 'fecha' | 'monto' | 'tipo' | 'mes' | 'año';
-type SortDirection = 'asc' | 'desc';
+type SortField = "fecha" | "monto" | "tipo" | "mes" | "año";
+type SortDirection = "asc" | "desc";
 
 export function ExpenseList() {
   const { gastos, removeExpense } = useExpenseStore();
-  const [searchTerm, setSearchTerm] = useState('');
-  const [filterTipo, setFilterTipo] = useState<string>('');
-  const [filterOrigen, setFilterOrigen] = useState<string>('');
-  const [filterMes, setFilterMes] = useState<number | ''>('');
-  const [filterAño, setFilterAño] = useState<number | ''>('');
-  const [sortField, setSortField] = useState<SortField>('fecha');
-  const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
+  const [searchTerm, setSearchTerm] = useState("");
+  const [filterTipo, setFilterTipo] = useState<string>("");
+  const [filterOrigen, setFilterOrigen] = useState<string>("");
+  const today = new Date();
+  const defaultMes = today.getMonth() + 1;
+  const defaultAño = today.getFullYear();
+  const [filterMes, setFilterMes] = useState<number | "">(defaultMes);
+  const [filterAño, setFilterAño] = useState<number | "">(defaultAño);
+  const [sortField, setSortField] = useState<SortField>("fecha");
+  const [sortDirection, setSortDirection] = useState<SortDirection>("desc");
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 20;
 
@@ -31,10 +45,14 @@ export function ExpenseList() {
     if (searchTerm) {
       const searchLower = searchTerm.toLowerCase();
       filtered = filtered.filter((g) => {
-        const uuidMatch = 'uuid' in g && g.uuid?.toLowerCase().includes(searchLower);
+        const uuidMatch =
+          "uuid" in g && g.uuid?.toLowerCase().includes(searchLower);
         const idMatch = g.id.toLowerCase().includes(searchLower);
-        const rfcMatch = 'rfcEmisor' in g && g.rfcEmisor?.toLowerCase().includes(searchLower);
-        const nombreMatch = 'nombreEmisor' in g && g.nombreEmisor?.toLowerCase().includes(searchLower);
+        const rfcMatch =
+          "rfcEmisor" in g && g.rfcEmisor?.toLowerCase().includes(searchLower);
+        const nombreMatch =
+          "nombreEmisor" in g &&
+          g.nombreEmisor?.toLowerCase().includes(searchLower);
         const conceptoMatch = g.concepto?.toLowerCase().includes(searchLower);
         return uuidMatch || idMatch || rfcMatch || nombreMatch || conceptoMatch;
       });
@@ -58,29 +76,38 @@ export function ExpenseList() {
     filtered.sort((a, b) => {
       let comparison = 0;
       switch (sortField) {
-        case 'fecha':
+        case "fecha":
           comparison = a.fecha.getTime() - b.fecha.getTime();
           break;
-        case 'monto':
-          const montoA = 'total' in a ? a.total : a.monto;
-          const montoB = 'total' in b ? b.total : b.monto;
+        case "monto":
+          const montoA = "total" in a ? a.total : a.monto;
+          const montoB = "total" in b ? b.total : b.monto;
           comparison = montoA - montoB;
           break;
-        case 'tipo':
+        case "tipo":
           comparison = a.tipo.localeCompare(b.tipo);
           break;
-        case 'mes':
+        case "mes":
           comparison = a.mes - b.mes;
           break;
-        case 'año':
+        case "año":
           comparison = a.año - b.año;
           break;
       }
-      return sortDirection === 'asc' ? comparison : -comparison;
+      return sortDirection === "asc" ? comparison : -comparison;
     });
 
     return filtered;
-  }, [gastos, searchTerm, filterTipo, filterOrigen, filterMes, filterAño, sortField, sortDirection]);
+  }, [
+    gastos,
+    searchTerm,
+    filterTipo,
+    filterOrigen,
+    filterMes,
+    filterAño,
+    sortField,
+    sortDirection,
+  ]);
 
   // Paginación
   const totalPages = Math.ceil(filteredAndSortedExpenses.length / itemsPerPage);
@@ -91,27 +118,30 @@ export function ExpenseList() {
 
   const handleSort = (field: SortField) => {
     if (sortField === field) {
-      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+      setSortDirection(sortDirection === "asc" ? "desc" : "asc");
     } else {
       setSortField(field);
-      setSortDirection('asc');
+      setSortDirection("asc");
     }
     setCurrentPage(1);
   };
 
   const clearFilters = () => {
-    setSearchTerm('');
-    setFilterTipo('');
-    setFilterOrigen('');
-    setFilterMes('');
-    setFilterAño('');
+    setSearchTerm("");
+    setFilterTipo("");
+    setFilterOrigen("");
+    setFilterMes("");
+    setFilterAño("");
     setCurrentPage(1);
   };
 
-  const hasActiveFilters = searchTerm || filterTipo || filterOrigen || filterMes || filterAño;
+  const hasActiveFilters =
+    searchTerm || filterTipo || filterOrigen || filterMes || filterAño;
 
-  const gastosXML = gastos.filter((g): g is GastoXML => g.tipoOrigen === 'XML');
-  const gastosManuales = gastos.filter((g): g is GastoManual => g.tipoOrigen === 'MANUAL');
+  const gastosXML = gastos.filter((g): g is GastoXML => g.tipoOrigen === "XML");
+  const gastosManuales = gastos.filter(
+    (g): g is GastoManual => g.tipoOrigen === "MANUAL",
+  );
 
   if (gastos.length === 0) {
     return (
@@ -132,7 +162,8 @@ export function ExpenseList() {
         <div className="flex justify-between items-center">
           <div>
             <h2 className="text-xl font-bold">
-              Gastos Cargados ({filteredAndSortedExpenses.length} de {gastos.length})
+              Gastos Cargados ({filteredAndSortedExpenses.length} de{" "}
+              {gastos.length})
             </h2>
             <div className="flex gap-4 text-sm text-gray-600 mt-1">
               <span>XML: {gastosXML.length}</span>
@@ -211,7 +242,9 @@ export function ExpenseList() {
             <select
               value={filterMes}
               onChange={(e) => {
-                setFilterMes(e.target.value === '' ? '' : parseInt(e.target.value, 10));
+                setFilterMes(
+                  e.target.value === "" ? "" : parseInt(e.target.value, 10),
+                );
                 setCurrentPage(1);
               }}
               className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
@@ -232,7 +265,9 @@ export function ExpenseList() {
               type="number"
               value={filterAño}
               onChange={(e) => {
-                setFilterAño(e.target.value === '' ? '' : parseInt(e.target.value, 10));
+                setFilterAño(
+                  e.target.value === "" ? "" : parseInt(e.target.value, 10),
+                );
                 setCurrentPage(1);
               }}
               placeholder="Ej: 2024"
@@ -257,35 +292,44 @@ export function ExpenseList() {
               </th>
               <th className="text-left px-6 py-3 text-sm font-semibold text-gray-700">
                 <button
-                  onClick={() => handleSort('fecha')}
+                  onClick={() => handleSort("fecha")}
                   className="flex items-center gap-1 hover:text-gray-900"
                 >
                   Fecha
-                  {sortField === 'fecha' && (
-                    sortDirection === 'asc' ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />
-                  )}
+                  {sortField === "fecha" &&
+                    (sortDirection === "asc" ? (
+                      <ChevronUp className="h-4 w-4" />
+                    ) : (
+                      <ChevronDown className="h-4 w-4" />
+                    ))}
                 </button>
               </th>
               <th className="text-left px-6 py-3 text-sm font-semibold text-gray-700">
                 <button
-                  onClick={() => handleSort('tipo')}
+                  onClick={() => handleSort("tipo")}
                   className="flex items-center gap-1 hover:text-gray-900"
                 >
                   Tipo
-                  {sortField === 'tipo' && (
-                    sortDirection === 'asc' ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />
-                  )}
+                  {sortField === "tipo" &&
+                    (sortDirection === "asc" ? (
+                      <ChevronUp className="h-4 w-4" />
+                    ) : (
+                      <ChevronDown className="h-4 w-4" />
+                    ))}
                 </button>
               </th>
               <th className="text-right px-6 py-3 text-sm font-semibold text-gray-700">
                 <button
-                  onClick={() => handleSort('monto')}
+                  onClick={() => handleSort("monto")}
                   className="flex items-center gap-1 hover:text-gray-900 ml-auto"
                 >
                   Monto
-                  {sortField === 'monto' && (
-                    sortDirection === 'asc' ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />
-                  )}
+                  {sortField === "monto" &&
+                    (sortDirection === "asc" ? (
+                      <ChevronUp className="h-4 w-4" />
+                    ) : (
+                      <ChevronDown className="h-4 w-4" />
+                    ))}
                 </button>
               </th>
               <th className="text-left px-6 py-3 text-sm font-semibold text-gray-700">
@@ -293,13 +337,16 @@ export function ExpenseList() {
               </th>
               <th className="text-left px-6 py-3 text-sm font-semibold text-gray-700">
                 <button
-                  onClick={() => handleSort('mes')}
+                  onClick={() => handleSort("mes")}
                   className="flex items-center gap-1 hover:text-gray-900"
                 >
                   Mes/Año
-                  {sortField === 'mes' && (
-                    sortDirection === 'asc' ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />
-                  )}
+                  {sortField === "mes" &&
+                    (sortDirection === "asc" ? (
+                      <ChevronUp className="h-4 w-4" />
+                    ) : (
+                      <ChevronDown className="h-4 w-4" />
+                    ))}
                 </button>
               </th>
               <th className="text-left px-6 py-3 text-sm font-semibold text-gray-700">
@@ -313,13 +360,20 @@ export function ExpenseList() {
           <tbody className="divide-y divide-gray-200">
             {paginatedExpenses.length === 0 ? (
               <tr>
-                <td colSpan={9} className="px-6 py-12 text-center text-gray-500">
+                <td
+                  colSpan={9}
+                  className="px-6 py-12 text-center text-gray-500"
+                >
                   No se encontraron gastos con los filtros aplicados
                 </td>
               </tr>
             ) : (
               paginatedExpenses.map((gasto) => (
-                <ExpenseRow key={gasto.id} gasto={gasto} onRemove={removeExpense} />
+                <ExpenseRow
+                  key={gasto.id}
+                  gasto={gasto}
+                  onRemove={removeExpense}
+                />
               ))
             )}
           </tbody>
@@ -330,7 +384,12 @@ export function ExpenseList() {
       {totalPages > 1 && (
         <div className="px-6 py-4 border-t border-gray-200 flex justify-between items-center">
           <p className="text-sm text-gray-600">
-            Mostrando {(currentPage - 1) * itemsPerPage + 1} - {Math.min(currentPage * itemsPerPage, filteredAndSortedExpenses.length)} de {filteredAndSortedExpenses.length}
+            Mostrando {(currentPage - 1) * itemsPerPage + 1} -{" "}
+            {Math.min(
+              currentPage * itemsPerPage,
+              filteredAndSortedExpenses.length,
+            )}{" "}
+            de {filteredAndSortedExpenses.length}
           </p>
           <div className="flex gap-2">
             <Button
@@ -365,7 +424,7 @@ interface ExpenseRowProps {
 }
 
 function ExpenseRow({ gasto, onRemove }: ExpenseRowProps) {
-  if (gasto.tipoOrigen === 'MANUAL') {
+  if (gasto.tipoOrigen === "MANUAL") {
     return (
       <tr className="hover:bg-gray-50 transition-colors">
         <td className="px-6 py-4">
@@ -374,17 +433,19 @@ function ExpenseRow({ gasto, onRemove }: ExpenseRowProps) {
           </span>
         </td>
         <td className="px-6 py-4">
-          <p className="font-mono text-xs text-gray-600">{gasto.id.substring(0, 12)}...</p>
+          <p className="font-mono text-xs text-gray-600">
+            {gasto.id.substring(0, 12)}...
+          </p>
         </td>
         <td className="px-6 py-4 text-sm text-gray-900">
-          {gasto.fecha.toLocaleDateString('es-MX')}
+          {gasto.fecha.toLocaleDateString("es-MX")}
         </td>
         <td className="px-6 py-4">
           <span
             className={`px-2 py-1 rounded text-xs font-semibold ${
-              gasto.tipo === 'PUE'
-                ? 'bg-green-100 text-green-700'
-                : 'bg-yellow-100 text-yellow-700'
+              gasto.tipo === "PUE"
+                ? "bg-green-100 text-green-700"
+                : "bg-yellow-100 text-yellow-700"
             }`}
           >
             {gasto.tipo}
@@ -392,7 +453,8 @@ function ExpenseRow({ gasto, onRemove }: ExpenseRowProps) {
         </td>
         <td className="px-6 py-4 text-right">
           <p className="font-semibold text-gray-900">
-            ${gasto.monto.toLocaleString('es-MX', {
+            $
+            {gasto.monto.toLocaleString("es-MX", {
               minimumFractionDigits: 2,
               maximumFractionDigits: 2,
             })}
@@ -423,9 +485,9 @@ function ExpenseRow({ gasto, onRemove }: ExpenseRowProps) {
 
   // Gasto XML
   const tipoColors = {
-    PUE: 'bg-green-100 text-green-700',
-    PPD: 'bg-yellow-100 text-yellow-700',
-    COMPLEMENTO_PAGO: 'bg-blue-100 text-blue-700',
+    PUE: "bg-green-100 text-green-700",
+    PPD: "bg-yellow-100 text-yellow-700",
+    COMPLEMENTO_PAGO: "bg-blue-100 text-blue-700",
   };
 
   return (
@@ -440,9 +502,9 @@ function ExpenseRow({ gasto, onRemove }: ExpenseRowProps) {
           {gasto.uuid.substring(0, 8)}...
         </p>
       </td>
-        <td className="px-6 py-4 text-sm text-gray-900">
-          {gasto.fecha.toLocaleDateString('es-MX')}
-        </td>
+      <td className="px-6 py-4 text-sm text-gray-900">
+        {gasto.fecha.toLocaleDateString("es-MX")}
+      </td>
       <td className="px-6 py-4">
         <span
           className={`px-2 py-1 rounded text-xs font-semibold ${
@@ -454,14 +516,15 @@ function ExpenseRow({ gasto, onRemove }: ExpenseRowProps) {
       </td>
       <td className="px-6 py-4 text-right">
         <p className="font-semibold text-gray-900">
-          ${gasto.total.toLocaleString('es-MX', {
+          $
+          {gasto.total.toLocaleString("es-MX", {
             minimumFractionDigits: 2,
             maximumFractionDigits: 2,
           })}
         </p>
       </td>
       <td className="px-6 py-4">
-        <p className="text-sm text-gray-900">{gasto.nombreEmisor || 'N/A'}</p>
+        <p className="text-sm text-gray-900">{gasto.nombreEmisor || "N/A"}</p>
         <p className="text-xs text-gray-500">{gasto.rfcEmisor}</p>
       </td>
       <td className="px-6 py-4 text-sm text-gray-600">
@@ -484,7 +547,7 @@ function ExpenseRow({ gasto, onRemove }: ExpenseRowProps) {
             {gasto.validacion.advertencias.length > 0 && (
               <span
                 className="inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-semibold bg-blue-100 text-blue-700 cursor-help"
-                title={gasto.validacion.advertencias.join('; ')}
+                title={gasto.validacion.advertencias.join("; ")}
               >
                 <Info className="h-3 w-3" />
                 {gasto.validacion.advertencias.length} advertencia(s)
@@ -508,4 +571,3 @@ function ExpenseRow({ gasto, onRemove }: ExpenseRowProps) {
     </tr>
   );
 }
-

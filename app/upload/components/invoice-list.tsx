@@ -1,24 +1,37 @@
-'use client';
+"use client";
 
-import { useState, useMemo } from 'react';
-import { useInvoiceStore } from '@/store';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Trash2, FileText, CheckCircle2, AlertTriangle, Info, Search, X, ChevronUp, ChevronDown } from 'lucide-react';
-import type { CFDI } from '@/lib/types';
-import { MESES } from '@/lib/types';
+import { useState, useMemo } from "react";
+import { useInvoiceStore } from "@/store";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import {
+  Trash2,
+  FileText,
+  CheckCircle2,
+  AlertTriangle,
+  Info,
+  Search,
+  X,
+  ChevronUp,
+  ChevronDown,
+} from "lucide-react";
+import type { CFDI } from "@/lib/types";
+import { MESES } from "@/lib/types";
 
-type SortField = 'fecha' | 'total' | 'tipo' | 'mes' | 'año';
-type SortDirection = 'asc' | 'desc';
+type SortField = "fecha" | "total" | "tipo" | "mes" | "año";
+type SortDirection = "asc" | "desc";
 
 export function InvoiceList() {
   const { invoices, removeInvoice } = useInvoiceStore();
-  const [searchTerm, setSearchTerm] = useState('');
-  const [filterTipo, setFilterTipo] = useState<string>('');
-  const [filterMes, setFilterMes] = useState<number | ''>('');
-  const [filterAño, setFilterAño] = useState<number | ''>('');
-  const [sortField, setSortField] = useState<SortField>('fecha');
-  const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
+  const [searchTerm, setSearchTerm] = useState("");
+  const [filterTipo, setFilterTipo] = useState<string>("");
+  const today = new Date();
+  const defaultMes = today.getMonth() + 1;
+  const defaultAño = today.getFullYear();
+  const [filterMes, setFilterMes] = useState<number | "">(defaultMes);
+  const [filterAño, setFilterAño] = useState<number | "">(defaultAño);
+  const [sortField, setSortField] = useState<SortField>("fecha");
+  const [sortDirection, setSortDirection] = useState<SortDirection>("desc");
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 20;
 
@@ -34,7 +47,7 @@ export function InvoiceList() {
           inv.uuid.toLowerCase().includes(searchLower) ||
           inv.rfcEmisor.toLowerCase().includes(searchLower) ||
           (inv.nombreEmisor?.toLowerCase().includes(searchLower) ?? false) ||
-          (inv.concepto?.toLowerCase().includes(searchLower) ?? false)
+          (inv.concepto?.toLowerCase().includes(searchLower) ?? false),
       );
     }
 
@@ -53,27 +66,35 @@ export function InvoiceList() {
     filtered.sort((a, b) => {
       let comparison = 0;
       switch (sortField) {
-        case 'fecha':
+        case "fecha":
           comparison = a.fecha.getTime() - b.fecha.getTime();
           break;
-        case 'total':
+        case "total":
           comparison = a.total - b.total;
           break;
-        case 'tipo':
+        case "tipo":
           comparison = a.tipo.localeCompare(b.tipo);
           break;
-        case 'mes':
+        case "mes":
           comparison = a.mes - b.mes;
           break;
-        case 'año':
+        case "año":
           comparison = a.año - b.año;
           break;
       }
-      return sortDirection === 'asc' ? comparison : -comparison;
+      return sortDirection === "asc" ? comparison : -comparison;
     });
 
     return filtered;
-  }, [invoices, searchTerm, filterTipo, filterMes, filterAño, sortField, sortDirection]);
+  }, [
+    invoices,
+    searchTerm,
+    filterTipo,
+    filterMes,
+    filterAño,
+    sortField,
+    sortDirection,
+  ]);
 
   // Paginación
   const totalPages = Math.ceil(filteredAndSortedInvoices.length / itemsPerPage);
@@ -84,19 +105,19 @@ export function InvoiceList() {
 
   const handleSort = (field: SortField) => {
     if (sortField === field) {
-      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+      setSortDirection(sortDirection === "asc" ? "desc" : "asc");
     } else {
       setSortField(field);
-      setSortDirection('asc');
+      setSortDirection("asc");
     }
     setCurrentPage(1);
   };
 
   const clearFilters = () => {
-    setSearchTerm('');
-    setFilterTipo('');
-    setFilterMes('');
-    setFilterAño('');
+    setSearchTerm("");
+    setFilterTipo("");
+    setFilterMes("");
+    setFilterAño("");
     setCurrentPage(1);
   };
 
@@ -106,9 +127,7 @@ export function InvoiceList() {
     return (
       <div className="bg-white border border-gray-200 rounded-lg p-12 text-center">
         <FileText className="h-16 w-16 text-gray-400 mx-auto mb-4" />
-        <p className="text-gray-600 text-lg">
-          No hay facturas cargadas aún
-        </p>
+        <p className="text-gray-600 text-lg">No hay facturas cargadas aún</p>
         <p className="text-gray-500 text-sm mt-2">
           Sube archivos XML para comenzar
         </p>
@@ -122,7 +141,8 @@ export function InvoiceList() {
       <div className="px-6 py-4 border-b border-gray-200 space-y-4">
         <div className="flex justify-between items-center">
           <h2 className="text-xl font-bold">
-            Facturas Cargadas ({filteredAndSortedInvoices.length} de {invoices.length})
+            Facturas Cargadas ({filteredAndSortedInvoices.length} de{" "}
+            {invoices.length})
           </h2>
           {hasActiveFilters && (
             <Button
@@ -179,7 +199,9 @@ export function InvoiceList() {
             <select
               value={filterMes}
               onChange={(e) => {
-                setFilterMes(e.target.value === '' ? '' : parseInt(e.target.value, 10));
+                setFilterMes(
+                  e.target.value === "" ? "" : parseInt(e.target.value, 10),
+                );
                 setCurrentPage(1);
               }}
               className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
@@ -200,7 +222,9 @@ export function InvoiceList() {
               type="number"
               value={filterAño}
               onChange={(e) => {
-                setFilterAño(e.target.value === '' ? '' : parseInt(e.target.value, 10));
+                setFilterAño(
+                  e.target.value === "" ? "" : parseInt(e.target.value, 10),
+                );
                 setCurrentPage(1);
               }}
               placeholder="Ej: 2024"
@@ -219,13 +243,16 @@ export function InvoiceList() {
             <tr>
               <th className="text-left px-6 py-3 text-sm font-semibold text-gray-700">
                 <button
-                  onClick={() => handleSort('fecha')}
+                  onClick={() => handleSort("fecha")}
                   className="flex items-center gap-1 hover:text-gray-900"
                 >
                   Fecha
-                  {sortField === 'fecha' && (
-                    sortDirection === 'asc' ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />
-                  )}
+                  {sortField === "fecha" &&
+                    (sortDirection === "asc" ? (
+                      <ChevronUp className="h-4 w-4" />
+                    ) : (
+                      <ChevronDown className="h-4 w-4" />
+                    ))}
                 </button>
               </th>
               <th className="text-left px-6 py-3 text-sm font-semibold text-gray-700">
@@ -233,24 +260,30 @@ export function InvoiceList() {
               </th>
               <th className="text-left px-6 py-3 text-sm font-semibold text-gray-700">
                 <button
-                  onClick={() => handleSort('tipo')}
+                  onClick={() => handleSort("tipo")}
                   className="flex items-center gap-1 hover:text-gray-900"
                 >
                   Tipo
-                  {sortField === 'tipo' && (
-                    sortDirection === 'asc' ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />
-                  )}
+                  {sortField === "tipo" &&
+                    (sortDirection === "asc" ? (
+                      <ChevronUp className="h-4 w-4" />
+                    ) : (
+                      <ChevronDown className="h-4 w-4" />
+                    ))}
                 </button>
               </th>
               <th className="text-right px-6 py-3 text-sm font-semibold text-gray-700">
                 <button
-                  onClick={() => handleSort('total')}
+                  onClick={() => handleSort("total")}
                   className="flex items-center gap-1 hover:text-gray-900 ml-auto"
                 >
                   Total
-                  {sortField === 'total' && (
-                    sortDirection === 'asc' ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />
-                  )}
+                  {sortField === "total" &&
+                    (sortDirection === "asc" ? (
+                      <ChevronUp className="h-4 w-4" />
+                    ) : (
+                      <ChevronDown className="h-4 w-4" />
+                    ))}
                 </button>
               </th>
               <th className="text-left px-6 py-3 text-sm font-semibold text-gray-700">
@@ -258,13 +291,16 @@ export function InvoiceList() {
               </th>
               <th className="text-left px-6 py-3 text-sm font-semibold text-gray-700">
                 <button
-                  onClick={() => handleSort('mes')}
+                  onClick={() => handleSort("mes")}
                   className="flex items-center gap-1 hover:text-gray-900"
                 >
                   Mes/Año
-                  {sortField === 'mes' && (
-                    sortDirection === 'asc' ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />
-                  )}
+                  {sortField === "mes" &&
+                    (sortDirection === "asc" ? (
+                      <ChevronUp className="h-4 w-4" />
+                    ) : (
+                      <ChevronDown className="h-4 w-4" />
+                    ))}
                 </button>
               </th>
               <th className="text-left px-6 py-3 text-sm font-semibold text-gray-700">
@@ -278,7 +314,10 @@ export function InvoiceList() {
           <tbody className="divide-y divide-gray-200">
             {paginatedInvoices.length === 0 ? (
               <tr>
-                <td colSpan={8} className="px-6 py-12 text-center text-gray-500">
+                <td
+                  colSpan={8}
+                  className="px-6 py-12 text-center text-gray-500"
+                >
                   No se encontraron facturas con los filtros aplicados
                 </td>
               </tr>
@@ -299,7 +338,12 @@ export function InvoiceList() {
       {totalPages > 1 && (
         <div className="px-6 py-4 border-t border-gray-200 flex justify-between items-center">
           <p className="text-sm text-gray-600">
-            Mostrando {(currentPage - 1) * itemsPerPage + 1} - {Math.min(currentPage * itemsPerPage, filteredAndSortedInvoices.length)} de {filteredAndSortedInvoices.length}
+            Mostrando {(currentPage - 1) * itemsPerPage + 1} -{" "}
+            {Math.min(
+              currentPage * itemsPerPage,
+              filteredAndSortedInvoices.length,
+            )}{" "}
+            de {filteredAndSortedInvoices.length}
           </p>
           <div className="flex gap-2">
             <Button
@@ -335,9 +379,9 @@ interface InvoiceRowProps {
 
 function InvoiceRow({ invoice, onRemove }: InvoiceRowProps) {
   const tipoColors = {
-    PUE: 'bg-green-100 text-green-700',
-    PPD: 'bg-yellow-100 text-yellow-700',
-    COMPLEMENTO_PAGO: 'bg-blue-100 text-blue-700',
+    PUE: "bg-green-100 text-green-700",
+    PPD: "bg-yellow-100 text-yellow-700",
+    COMPLEMENTO_PAGO: "bg-blue-100 text-blue-700",
   };
 
   return (
@@ -348,7 +392,7 @@ function InvoiceRow({ invoice, onRemove }: InvoiceRowProps) {
         </p>
       </td>
       <td className="px-6 py-4 text-sm text-gray-900">
-        {invoice.fecha.toLocaleDateString('es-MX')}
+        {invoice.fecha.toLocaleDateString("es-MX")}
       </td>
       <td className="px-6 py-4">
         <span
@@ -361,14 +405,15 @@ function InvoiceRow({ invoice, onRemove }: InvoiceRowProps) {
       </td>
       <td className="px-6 py-4 text-right">
         <p className="font-semibold text-gray-900">
-          ${invoice.total.toLocaleString('es-MX', {
+          $
+          {invoice.total.toLocaleString("es-MX", {
             minimumFractionDigits: 2,
             maximumFractionDigits: 2,
           })}
         </p>
       </td>
       <td className="px-6 py-4">
-        <p className="text-sm text-gray-900">{invoice.nombreEmisor || 'N/A'}</p>
+        <p className="text-sm text-gray-900">{invoice.nombreEmisor || "N/A"}</p>
         <p className="text-xs text-gray-500">{invoice.rfcEmisor}</p>
       </td>
       <td className="px-6 py-4 text-sm text-gray-600">
@@ -391,7 +436,7 @@ function InvoiceRow({ invoice, onRemove }: InvoiceRowProps) {
             {invoice.validacion.advertencias.length > 0 && (
               <span
                 className="inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-semibold bg-blue-100 text-blue-700 cursor-help"
-                title={invoice.validacion.advertencias.join('; ')}
+                title={invoice.validacion.advertencias.join("; ")}
               >
                 <Info className="h-3 w-3" />
                 {invoice.validacion.advertencias.length} advertencia(s)
@@ -408,7 +453,7 @@ function InvoiceRow({ invoice, onRemove }: InvoiceRowProps) {
           size="sm"
           onClick={() => {
             onRemove(invoice.uuid).catch((error) => {
-              console.error('Error al eliminar factura:', error);
+              console.error("Error al eliminar factura:", error);
             });
           }}
           className="text-red-600 hover:text-red-700 hover:bg-red-50"
@@ -419,4 +464,3 @@ function InvoiceRow({ invoice, onRemove }: InvoiceRowProps) {
     </tr>
   );
 }
-
